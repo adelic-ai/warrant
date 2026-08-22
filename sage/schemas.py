@@ -67,6 +67,12 @@ class TokenExchangeResponse(BaseModel):
     access_token: str
 
 
+class ChainedExchangeRequest(BaseModel):
+    parent_token: str
+    sub_actor_cert_pem: str
+    requested_actions: list[str]
+
+
 class GatewayResponse(BaseModel):
     decision: Decision
     policy: str

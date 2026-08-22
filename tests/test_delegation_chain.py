@@ -2,6 +2,51 @@ from sage.identity import CA
 from sage.tokens import ExchangeError, exchange, exchange_chained, issue_subject_token, verify_exchanged_token
 
 
+def test_chained_exchange_over_http(client):
+    subject_token = client.post("/token/subject", json={"principal": "user:rick"}).json()["subject_token"]
+    a17_cert = client.post("/identity/issue", json={"agent_id": "A17"}).json()["cert_pem"]
+    hop1 = client.post(
+        "/token/exchange",
+        json={
+            "subject_token": subject_token,
+            "actor_cert_pem": a17_cert,
+            "case": "case:42",
+            "requested_actions": ["read", "export"],
+        },
+    ).json()["access_token"]
+
+    b1_cert = client.post("/identity/issue", json={"agent_id": "B1"}).json()["cert_pem"]
+    resp = client.post(
+        "/token/exchange/chain",
+        json={"parent_token": hop1, "sub_actor_cert_pem": b1_cert, "requested_actions": ["read"]},
+    )
+    assert resp.status_code == 200
+    from sage.tokens import verify_exchanged_token as verify
+
+    claims = verify(resp.json()["access_token"])
+    assert claims["act"]["sub"] == "spiffe://sage.local/agent/B1"
+    assert claims["act"]["act"]["sub"] == "spiffe://sage.local/agent/A17"
+    assert claims["scope"] == ["read"]
+
+    # And a widen attempt over HTTP is rejected too — hop1 itself has both actions, so construct
+    # a genuinely-narrower parent token to make the rejection meaningful.
+    narrow_hop1 = client.post(
+        "/token/exchange",
+        json={
+            "subject_token": subject_token,
+            "actor_cert_pem": a17_cert,
+            "case": "case:42",
+            "requested_actions": ["read"],
+        },
+    ).json()["access_token"]
+    widen_resp = client.post(
+        "/token/exchange/chain",
+        json={"parent_token": narrow_hop1, "sub_actor_cert_pem": b1_cert, "requested_actions": ["read", "export"]},
+    )
+    assert widen_resp.status_code == 400
+    assert "exceeds the parent token's own scope" in widen_resp.json()["detail"]
+
+
 def test_three_hop_chain_scope_narrows_and_both_identities_are_nested(session):
     subject_token = issue_subject_token("user:rick")
     hop1 = exchange(

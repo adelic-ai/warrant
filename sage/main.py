@@ -16,6 +16,7 @@ from sage.schemas import (
     ApproveResponse,
     AuthorizeRequest,
     AuthorizeResponse,
+    ChainedExchangeRequest,
     GatewayResponse,
     IssueIdentityRequest,
     IssueIdentityResponse,
@@ -24,7 +25,7 @@ from sage.schemas import (
     TokenExchangeRequest,
     TokenExchangeResponse,
 )
-from sage.tokens import ExchangeError, exchange, issue_subject_token
+from sage.tokens import ExchangeError, exchange, exchange_chained, issue_subject_token
 
 
 def _bearer_token(authorization: str = Header(...)) -> str:
@@ -99,6 +100,22 @@ def token_exchange(
             subject_token=req.subject_token,
             actor_cert_pem=req.actor_cert_pem.encode(),
             case=req.case,
+            requested_actions=req.requested_actions,
+        )
+    except ExchangeError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return TokenExchangeResponse(access_token=token)
+
+
+@app.post("/token/exchange/chain", response_model=TokenExchangeResponse)
+def token_exchange_chain(
+    req: ChainedExchangeRequest, session: Session = Depends(get_session)
+) -> TokenExchangeResponse:
+    try:
+        token = exchange_chained(
+            session,
+            parent_token=req.parent_token,
+            sub_actor_cert_pem=req.sub_actor_cert_pem.encode(),
             requested_actions=req.requested_actions,
         )
     except ExchangeError as exc:
