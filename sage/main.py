@@ -6,7 +6,7 @@ from fastapi import Depends, FastAPI
 from sqlmodel import Session
 
 from sage.db import get_session, init_db
-from sage.pdp import decide
+from sage.pdp import PDP_BACKEND, decide
 from sage.schemas import AuthorizeRequest, AuthorizeResponse
 
 
@@ -25,7 +25,7 @@ app = FastAPI(
 
 @app.get("/health")
 def health() -> dict:
-    return {"status": "ok"}
+    return {"status": "ok", "pdp_backend": PDP_BACKEND}
 
 
 @app.post("/authorize", response_model=AuthorizeResponse)

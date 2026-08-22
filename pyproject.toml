@@ -10,6 +10,7 @@ dependencies = [
     "sqlmodel>=0.0.22",
     "pyjwt>=2.9",
     "cryptography>=43.0",
+    "cedarpy>=4.8",
 ]
 
 [project.optional-dependencies]

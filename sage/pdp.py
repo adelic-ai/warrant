@@ -1,9 +1,11 @@
-"""Policy Decision Point — Phase 1 (deterministic) and Phase 2 (Cedar, if it lands cleanly).
+"""Policy Decision Point.
 
-This module is the one seam the rest of the service depends on: `decide()`. Phase 2 may swap the
-internals for Cedar; the contract (AuthorizationResult, decide's signature) does not change. If
-Cedar isn't wired in, this deterministic evaluator IS the shipped PDP — say so in the README, don't
-silently pretend otherwise.
+`decide()` is the one seam the rest of the service depends on. The pre-checks (unknown resource,
+expiry, explicit forbid, requires-approval) are plain Python and always run first — those are the
+deontic-seam wrapper the architecture research calls out as the actual contribution. The final
+affirmative-grant question ("is this action permitted") is delegated to Cedar when the `cedarpy`
+wheel is installed, and to an equivalent plain-Python `in` check when it isn't. Which backend is
+active is exposed via `PDP_BACKEND` below and surfaced at `/health` — never silently substituted.
 """
 from __future__ import annotations
 
@@ -13,7 +15,16 @@ from typing import Optional
 
 from sqlmodel import Session, select
 
+from sage.cedar_backend import CEDAR_AVAILABLE, cedar_permits
 from sage.models import AuditRecord, Decision, Delegation, Obligation, Resource, utcnow
+
+PDP_BACKEND = "cedar" if CEDAR_AVAILABLE else "python-fallback"
+
+
+def _is_permitted(subject_id: str, action: str, resource_id: str, delegation: Delegation) -> bool:
+    if CEDAR_AVAILABLE:
+        return cedar_permits(subject_id, action, resource_id, delegation.permitted)
+    return action in delegation.permitted
 
 POLICY_PERMIT = "AGENT-DELEGATION-01"
 POLICY_FORBID_NO_DELEGATION = "AGENT-DELEGATION-02"
@@ -154,8 +165,8 @@ def decide(
         _record(session, result)
         return result
 
-    if action in delegation.permitted:
-        facts.append(f"delegation permits '{action}'")
+    if _is_permitted(subject_id, action, resource_id, delegation):
+        facts.append(f"delegation permits '{action}' ({PDP_BACKEND} evaluator)")
         result = AuthorizationResult(
             decision=Decision.PERMIT,
             subject_id=subject_id,
