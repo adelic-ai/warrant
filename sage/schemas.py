@@ -32,6 +32,13 @@ class ApproveRequest(BaseModel):
     approver: str  # must be a HUMAN identity distinct from the agent that triggered it
 
 
+class ApproveResponse(BaseModel):
+    obligation_id: str
+    discharged: bool
+    discharged_by: str
+    discharged_at: str
+
+
 class SubjectTokenRequest(BaseModel):
     principal: str
 

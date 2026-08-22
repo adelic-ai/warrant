@@ -8,8 +8,11 @@ from sqlmodel import Session
 from sage.db import get_session, init_db
 from sage.gateway import GatewayError, handle as gateway_handle
 from sage.identity import CA
+from sage.obligations import ApprovalError, discharge
 from sage.pdp import PDP_BACKEND, decide
 from sage.schemas import (
+    ApproveRequest,
+    ApproveResponse,
     AuthorizeRequest,
     AuthorizeResponse,
     GatewayResponse,
@@ -100,6 +103,20 @@ def token_exchange(
     except ExchangeError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     return TokenExchangeResponse(access_token=token)
+
+
+@app.post("/approve", response_model=ApproveResponse)
+def approve(req: ApproveRequest, session: Session = Depends(get_session)) -> ApproveResponse:
+    try:
+        obligation = discharge(session, obligation_id=req.obligation_id, approver_id=req.approver)
+    except ApprovalError as exc:
+        raise HTTPException(status_code=403, detail=str(exc))
+    return ApproveResponse(
+        obligation_id=obligation.id,
+        discharged=obligation.discharged,
+        discharged_by=obligation.discharged_by,
+        discharged_at=obligation.discharged_at.isoformat(),
+    )
 
 
 @app.get("/gateway/documents/{doc_id}", response_model=GatewayResponse)

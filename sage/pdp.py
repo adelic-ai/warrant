@@ -151,16 +151,33 @@ def decide(
             facts=facts,
             reason=f"Agent has delegated access to {delegation.scope}, but '{action}' requires human approval.",
         )
-        obligation = Obligation(
-            subject_id=subject_id,
-            principal_id=principal_id,
-            action=action,
-            resource_id=resource_id,
-            delegation_id=delegation.id,
+        # Reuse an existing undischarged obligation for the exact same request instead of
+        # spawning a duplicate on every repeated call — the obligation identifies "this
+        # requirement," not "this particular attempt."
+        stmt = select(Obligation).where(
+            Obligation.subject_id == subject_id,
+            Obligation.principal_id == principal_id,
+            Obligation.action == action,
+            Obligation.resource_id == resource_id,
+            Obligation.delegation_id == delegation.id,
         )
-        session.add(obligation)
-        session.commit()
-        session.refresh(obligation)
+        obligation = session.exec(stmt).first()
+        if obligation is None:
+            obligation = Obligation(
+                subject_id=subject_id,
+                principal_id=principal_id,
+                action=action,
+                resource_id=resource_id,
+                delegation_id=delegation.id,
+            )
+            session.add(obligation)
+            session.commit()
+            session.refresh(obligation)
+        if obligation.discharged:
+            facts.append(
+                f"obligation {obligation.id} already discharged by {obligation.discharged_by} "
+                f"at {obligation.discharged_at.isoformat()}"
+            )
         result.obligation_id = obligation.id
         _record(session, result)
         return result

@@ -17,7 +17,7 @@ from typing import Optional
 from sqlmodel import Session
 
 from sage.downstream import INTERNAL_KEY, DownstreamAuthError, fetch_document
-from sage.models import Decision
+from sage.models import Decision, Obligation
 from sage.pdp import decide
 from sage.tokens import ExchangeError, agent_id_from_spiffe, verify_exchanged_token
 
@@ -58,16 +58,34 @@ def handle(session: Session, *, access_token: str, action: str, resource_id: str
     )
 
     content = None
-    if result.decision == Decision.PERMIT and action == "read":
+    facts = list(result.facts)
+    decision = result.decision
+
+    if decision == Decision.PERMIT and action == "read":
         try:
             content = fetch_document(resource_id, internal_key=INTERNAL_KEY)
         except (DownstreamAuthError, KeyError) as exc:
             raise GatewayError(f"downstream fetch failed: {exc}") from exc
 
+    if decision == Decision.REQUIRE_APPROVAL and result.obligation_id is not None:
+        # Ground-truth check, not a trusted self-report: read the Obligation row a *distinct*
+        # /approve call wrote, not any flag the caller of this gateway request could set itself.
+        obligation = session.get(Obligation, result.obligation_id)
+        if obligation is not None and obligation.discharged and obligation.discharged_at is not None:
+            facts.append(
+                f"obligation {obligation.id} discharged by {obligation.discharged_by} "
+                f"at {obligation.discharged_at.isoformat()} — completing now"
+            )
+            try:
+                content = fetch_document(resource_id, internal_key=INTERNAL_KEY)
+            except (DownstreamAuthError, KeyError) as exc:
+                raise GatewayError(f"downstream fetch failed: {exc}") from exc
+            decision = Decision.PERMIT
+
     return GatewayResult(
-        decision=result.decision,
+        decision=decision,
         policy=result.policy,
-        facts=result.facts,
+        facts=facts,
         reason=result.reason,
         obligation_id=result.obligation_id,
         content=content,
