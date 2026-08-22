@@ -13,10 +13,16 @@ actions only after checking a real approval record, not a self-reported flag.
 
 ## Concept
 
-A prototype, not a product — the IAM slice of a scaffold shaped by Roblox's *Caging the Agent*
-(Black Hat USA 2026): identity, scoped delegation, policy decisions, and audit for an AI agent
-acting on behalf of a human. `warden` (sibling project, same author) covers the other half of that
-scaffold — containment and reconciliation at the OS/network level, not authorization.
+A prototype for delegated, auditable AI-agent authorization — identity, scoped delegation, policy
+decisions, and audit. Roblox's *Caging the Agent* (Black Hat USA 2026) anchors one piece of it —
+the gateway's credential-injection pattern — but the rest is original: SPIFFE + RFC 8693 delegation
+instead of Roblox's own JWT+Vault approach (a deliberate divergence toward the emerging 2026
+standard, not an oversight — see Design principles); three enforcement mechanisms a plain PDP like
+Cedar or OPA doesn't provide natively (obligation discharge checked against a real approval record
+instead of a trusted flag, defeater provenance on every non-default-deny decision, and
+proof-carrying scope non-increase across a real delegation chain); and the same
+don't-trust-self-report thesis as the sibling project `warden` (same author), applied here to
+obligation discharge instead of OS-level telemetry.
 
 ## Architecture
 
