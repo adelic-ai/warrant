@@ -60,6 +60,13 @@ class Delegation(SQLModel, table=True):
     created_at: datetime = Field(default_factory=utcnow)
     expires_at: datetime
 
+    # Provenance for the defeater-surfacing seam (pdp.py) — the Delegation is the only thing in
+    # this system capable of overriding a default-deny, so it's the thing that needs an owner,
+    # a reason, and a review date attached, not a Cedar policy annotation. `owner` is
+    # `principal_id` (who granted it) — no separate field needed.
+    granted_reason: str = "no reason recorded"
+    reviewed_at: Optional[datetime] = None
+
     def _split(self, field: str) -> list[str]:
         return [a for a in field.split(",") if a]
 

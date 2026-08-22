@@ -123,6 +123,14 @@ def decide(
 
     facts.append(f"{subject_id} actsOnBehalfOf {principal_id}")
     facts.append(f"delegation {delegation.id} scoped to {delegation.scope}")
+    # Defeater provenance — the delegation is the only thing here that can override a
+    # default-deny, so every decision that reaches this point answers "why wasn't this
+    # forbidden" with who granted it, why, and when it was last reviewed — not just "it wasn't."
+    reviewed = delegation.reviewed_at.isoformat() if delegation.reviewed_at else "never reviewed"
+    facts.append(
+        f"delegation {delegation.id} owner={delegation.principal_id} "
+        f'reason="{delegation.granted_reason}" reviewed={reviewed}'
+    )
 
     if action in delegation.forbidden:
         facts.append(f"delegation explicitly forbids {action}")

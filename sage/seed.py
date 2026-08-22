@@ -28,6 +28,8 @@ def seed_demo(session: Session) -> None:
             requires_approval_actions="export",
             forbidden_actions="modify",
             expires_at=utcnow() + timedelta(minutes=30),
+            granted_reason="Agent17 assists Rick's review of Case 42 documents",
+            reviewed_at=utcnow(),
         )
     )
     session.commit()
