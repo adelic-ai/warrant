@@ -20,7 +20,7 @@ from sage.audit import record_completion
 from sage.downstream import INTERNAL_KEY, DownstreamAuthError, fetch_document
 from sage.models import Decision, Obligation
 from sage.pdp import decide
-from sage.tokens import ExchangeError, agent_id_from_spiffe, verify_exchanged_token
+from sage.tokens import ExchangeError, agent_id_from_spiffe, root_spiffe_from_claims, verify_exchanged_token
 
 
 @dataclass
@@ -52,14 +52,20 @@ def handle(session: Session, *, access_token: str, action: str, resource_id: str
         )
 
     principal_id = claims["sub"]
-    agent_id = agent_id_from_spiffe(claims["act"]["sub"])
+    immediate_agent_id = agent_id_from_spiffe(claims["act"]["sub"])
+    root_agent_id = agent_id_from_spiffe(root_spiffe_from_claims(claims))
 
+    # The PDP checks the ROOT of the delegation chain — that's where the actual human-granted
+    # Delegation row lives. A sub-agent's authority is a narrowed view of that same grant (already
+    # enforced at exchange time by exchange_chained's scope-non-increase check), not a separate one.
     result = decide(
-        session, subject_id=agent_id, principal_id=principal_id, action=action, resource_id=resource_id
+        session, subject_id=root_agent_id, principal_id=principal_id, action=action, resource_id=resource_id
     )
 
     content = None
     facts = list(result.facts)
+    if immediate_agent_id != root_agent_id:
+        facts.append(f"acting via delegation chain: {immediate_agent_id} <- {root_agent_id}")
     decision = result.decision
 
     if decision == Decision.PERMIT and action == "read":
@@ -87,7 +93,7 @@ def handle(session: Session, *, access_token: str, action: str, resource_id: str
             # without this the trail would never show that the action actually completed.
             record_completion(
                 session,
-                subject_id=agent_id,
+                subject_id=root_agent_id,
                 principal_id=principal_id,
                 action=action,
                 resource_id=resource_id,

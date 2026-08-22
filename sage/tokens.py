@@ -176,6 +176,17 @@ def exchange_chained(
     return jwt.encode(claims, _SIGNING_KEY, algorithm=ALG)
 
 
+def root_spiffe_from_claims(claims: dict) -> str:
+    """Walks a (possibly nested) `act` chain down to the original first-hop agent — the one that
+    actually holds a Delegation row from the human principal. A sub-agent further down the chain
+    (e.g. B1, delegated to by A17) never gets its own Delegation row; its authority is a narrowed
+    view of A17's, not a separate grant, so policy decisions are checked against the root."""
+    act = claims["act"]
+    while "act" in act:
+        act = act["act"]
+    return act["sub"]
+
+
 def verify_exchanged_token(token: str) -> dict:
     try:
         claims = _decode(token)

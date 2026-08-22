@@ -1,0 +1,79 @@
+[
+  {
+    "id": "aud_827988f6858a",
+    "timestamp": "2026-08-22T15:54:29.087014",
+    "subject": "agent:A17",
+    "principal": "user:rick",
+    "action": "export",
+    "resource": "doc:123",
+    "decision": "REQUIRE_APPROVAL",
+    "policy": "CASE-DOCUMENT-EXPORT-01",
+    "facts": [
+      "doc:123 belongsTo case:42",
+      "agent:A17 actsOnBehalfOf user:rick",
+      "delegation del_demo42 scoped to case:42",
+      "delegation del_demo42 owner=user:rick reason=\"Agent17 assists Rick's review of Case 42 documents\" reviewed=2026-08-22T15:54:24.081776",
+      "'export' requires human approval under this delegation"
+    ],
+    "reason": "Agent has delegated access to case:42, but 'export' requires human approval.",
+    "obligation_id": "obl_747419a5312b"
+  },
+  {
+    "id": "aud_d9077f80619c",
+    "timestamp": "2026-08-22T15:54:30.721580",
+    "subject": "agent:B1",
+    "principal": "user:rick",
+    "action": "read",
+    "resource": "doc:123",
+    "decision": "FORBID",
+    "policy": "AGENT-DELEGATION-02",
+    "facts": [
+      "doc:123 belongsTo case:42",
+      "agent:B1 actsOnBehalfOf user:rick",
+      "no delegation covers scope case:42"
+    ],
+    "reason": "Requested action exceeds delegated authority \u2014 no delegation covers this scope.",
+    "obligation_id": null
+  },
+  {
+    "id": "aud_942f487bf0c8",
+    "timestamp": "2026-08-22T15:54:36.730355",
+    "subject": "agent:A17",
+    "principal": "user:rick",
+    "action": "export",
+    "resource": "doc:123",
+    "decision": "REQUIRE_APPROVAL",
+    "policy": "CASE-DOCUMENT-EXPORT-01",
+    "facts": [
+      "doc:123 belongsTo case:42",
+      "agent:A17 actsOnBehalfOf user:rick",
+      "delegation del_demo42 scoped to case:42",
+      "delegation del_demo42 owner=user:rick reason=\"Agent17 assists Rick's review of Case 42 documents\" reviewed=2026-08-22T15:54:24.081776",
+      "'export' requires human approval under this delegation",
+      "obligation obl_747419a5312b already discharged by user:rick at 2026-08-22T15:54:34.392207"
+    ],
+    "reason": "Agent has delegated access to case:42, but 'export' requires human approval.",
+    "obligation_id": "obl_747419a5312b"
+  },
+  {
+    "id": "aud_da87edeb845b",
+    "timestamp": "2026-08-22T15:54:36.733552",
+    "subject": "agent:A17",
+    "principal": "user:rick",
+    "action": "export",
+    "resource": "doc:123",
+    "decision": "PERMIT",
+    "policy": "OBLIGATION-DISCHARGED-COMPLETION",
+    "facts": [
+      "doc:123 belongsTo case:42",
+      "agent:A17 actsOnBehalfOf user:rick",
+      "delegation del_demo42 scoped to case:42",
+      "delegation del_demo42 owner=user:rick reason=\"Agent17 assists Rick's review of Case 42 documents\" reviewed=2026-08-22T15:54:24.081776",
+      "'export' requires human approval under this delegation",
+      "obligation obl_747419a5312b already discharged by user:rick at 2026-08-22T15:54:34.392207",
+      "obligation obl_747419a5312b discharged by user:rick at 2026-08-22T15:54:34.392207 \u2014 completing now"
+    ],
+    "reason": "Completed after obligation obl_747419a5312b was discharged.",
+    "obligation_id": "obl_747419a5312b"
+  }
+]

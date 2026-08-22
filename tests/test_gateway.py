@@ -57,6 +57,27 @@ def test_forbid_out_of_scope_resource_no_content(session):
     assert result.content is None
 
 
+def test_gateway_permits_a_sub_agent_using_a_chained_token(session):
+    # Regression test for a real bug found in the live Strands demo: a sub-agent (B1) has no
+    # Delegation row of its own — its authority is a narrowed view of A17's, via a chained token.
+    # The gateway must check the PDP against the chain's root, not demand a fresh Delegation for
+    # every hop, or every sub-agent gets wrongly denied.
+    from sage.tokens import exchange_chained
+
+    parent_token = _token(session, ["read"])
+    sub_identity = CA.issue("B1")
+    chained_token = exchange_chained(
+        session,
+        parent_token=parent_token,
+        sub_actor_cert_pem=sub_identity.cert_pem,
+        requested_actions=["read"],
+    )
+    result = handle(session, access_token=chained_token, action="read", resource_id="doc:123")
+    assert result.decision == Decision.PERMIT
+    assert "deposition" in result.content
+    assert "acting via delegation chain: agent:B1 <- agent:A17" in " ".join(result.facts)
+
+
 def test_gateway_over_http(client):
     subject_token = client.post("/token/subject", json={"principal": "user:rick"}).json()["subject_token"]
     cert_pem = client.post("/identity/issue", json={"agent_id": "A17"}).json()["cert_pem"]
