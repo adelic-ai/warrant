@@ -58,3 +58,12 @@ class TokenExchangeRequest(BaseModel):
 
 class TokenExchangeResponse(BaseModel):
     access_token: str
+
+
+class GatewayResponse(BaseModel):
+    decision: Decision
+    policy: str
+    facts: list[str]
+    reason: str
+    obligation_id: Optional[str] = None
+    content: Optional[str] = None

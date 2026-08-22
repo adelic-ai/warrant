@@ -58,7 +58,7 @@ def _decode(token: str) -> dict:
     )
 
 
-def _agent_id_from_spiffe(spiffe_id: str) -> str:
+def agent_id_from_spiffe(spiffe_id: str) -> str:
     # "spiffe://sage.local/agent/A17" -> "agent:A17" — the identity id convention used
     # throughout the rest of the models (Identity.id, Delegation.delegate_id).
     return "agent:" + spiffe_id.rsplit("/", 1)[-1]
@@ -90,7 +90,7 @@ def exchange(
     spiffe_id = CA.verify(actor_cert_pem)
     if spiffe_id is None:
         raise ExchangeError("actor assertion (SVID) failed verification")
-    agent_id = _agent_id_from_spiffe(spiffe_id)
+    agent_id = agent_id_from_spiffe(spiffe_id)
 
     delegation = find_active_delegation(
         session, principal_id=principal_id, delegate_id=agent_id, scope=case

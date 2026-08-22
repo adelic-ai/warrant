@@ -2,15 +2,17 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException
 from sqlmodel import Session
 
 from sage.db import get_session, init_db
+from sage.gateway import GatewayError, handle as gateway_handle
 from sage.identity import CA
 from sage.pdp import PDP_BACKEND, decide
 from sage.schemas import (
     AuthorizeRequest,
     AuthorizeResponse,
+    GatewayResponse,
     IssueIdentityRequest,
     IssueIdentityResponse,
     SubjectTokenRequest,
@@ -19,6 +21,12 @@ from sage.schemas import (
     TokenExchangeResponse,
 )
 from sage.tokens import ExchangeError, exchange, issue_subject_token
+
+
+def _bearer_token(authorization: str = Header(...)) -> str:
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="expected 'Authorization: Bearer <token>'")
+    return authorization.removeprefix("Bearer ")
 
 
 @asynccontextmanager
@@ -92,3 +100,32 @@ def token_exchange(
     except ExchangeError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     return TokenExchangeResponse(access_token=token)
+
+
+@app.get("/gateway/documents/{doc_id}", response_model=GatewayResponse)
+def gateway_read(
+    doc_id: str, token: str = Depends(_bearer_token), session: Session = Depends(get_session)
+) -> GatewayResponse:
+    return _gateway_call(session, token, "read", doc_id)
+
+
+@app.post("/gateway/documents/{doc_id}/export", response_model=GatewayResponse)
+def gateway_export(
+    doc_id: str, token: str = Depends(_bearer_token), session: Session = Depends(get_session)
+) -> GatewayResponse:
+    return _gateway_call(session, token, "export", doc_id)
+
+
+def _gateway_call(session: Session, token: str, action: str, doc_id: str) -> GatewayResponse:
+    try:
+        result = gateway_handle(session, access_token=token, action=action, resource_id=doc_id)
+    except GatewayError as exc:
+        raise HTTPException(status_code=403, detail=str(exc))
+    return GatewayResponse(
+        decision=result.decision,
+        policy=result.policy,
+        facts=result.facts,
+        reason=result.reason,
+        obligation_id=result.obligation_id,
+        content=result.content,
+    )
