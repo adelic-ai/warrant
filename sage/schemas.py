@@ -30,3 +30,31 @@ class AuthorizeResponse(BaseModel):
 class ApproveRequest(BaseModel):
     obligation_id: str
     approver: str  # must be a HUMAN identity distinct from the agent that triggered it
+
+
+class SubjectTokenRequest(BaseModel):
+    principal: str
+
+
+class SubjectTokenResponse(BaseModel):
+    subject_token: str
+
+
+class IssueIdentityRequest(BaseModel):
+    agent_id: str
+
+
+class IssueIdentityResponse(BaseModel):
+    spiffe_id: str
+    cert_pem: str
+
+
+class TokenExchangeRequest(BaseModel):
+    subject_token: str
+    actor_cert_pem: str
+    case: str
+    requested_actions: list[str]
+
+
+class TokenExchangeResponse(BaseModel):
+    access_token: str

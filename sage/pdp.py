@@ -47,7 +47,7 @@ class AuthorizationResult:
     obligation_id: Optional[str] = None
 
 
-def _find_delegation(
+def find_active_delegation(
     session: Session, *, principal_id: str, delegate_id: str, scope: str
 ) -> Optional[Delegation]:
     stmt = select(Delegation).where(
@@ -85,7 +85,7 @@ def decide(
         _record(session, result)
         return result
 
-    delegation = _find_delegation(
+    delegation = find_active_delegation(
         session, principal_id=principal_id, delegate_id=subject_id, scope=resource.belongs_to
     )
     facts = [f"{resource_id} belongsTo {resource.belongs_to}"]
