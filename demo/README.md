@@ -49,5 +49,5 @@ Costs a small number of real Claude Sonnet 5 API calls (two agents, a handful of
 
 `transcripts/run-<timestamp>/` — checked in from one real, successful run:
 - `intake_messages.json` — Intake's full message history (reasoning + tool calls + tool results).
-- `sage_audit_log.json` — warrant's own audit trail from that run.
-- `sage_reconcile.json` — the reconciliation check, clean (`{"violations": [], "clean": true}`).
+- `warrant_audit_log.json` — warrant's own audit trail from that run.
+- `warrant_reconcile.json` — the reconciliation check, clean (`{"violations": [], "clean": true}`).

@@ -119,8 +119,8 @@ def main() -> None:
         out_dir = DEMO_DIR / "transcripts" / f"run-{ts}"
         out_dir.mkdir(parents=True, exist_ok=True)
         (out_dir / "intake_messages.json").write_text(json.dumps(intake.messages, indent=2, default=str))
-        (out_dir / "sage_audit_log.json").write_text(json.dumps(client.audit_log(), indent=2))
-        (out_dir / "sage_reconcile.json").write_text(json.dumps(reconcile, indent=2))
+        (out_dir / "warrant_audit_log.json").write_text(json.dumps(client.audit_log(), indent=2))
+        (out_dir / "warrant_reconcile.json").write_text(json.dumps(reconcile, indent=2))
         print(f"\nSaved transcript + audit trail to {out_dir}")
     finally:
         proc.terminate()

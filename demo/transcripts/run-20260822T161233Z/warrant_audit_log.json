@@ -1,7 +1,7 @@
 [
   {
-    "id": "aud_b3b6434d57b5",
-    "timestamp": "2026-08-22T15:56:01.637697",
+    "id": "aud_25126b932355",
+    "timestamp": "2026-08-22T16:12:23.174983",
     "subject": "agent:A17",
     "principal": "user:rick",
     "action": "export",
@@ -12,15 +12,15 @@
       "doc:123 belongsTo case:42",
       "agent:A17 actsOnBehalfOf user:rick",
       "delegation del_demo42 scoped to case:42",
-      "delegation del_demo42 owner=user:rick reason=\"Agent17 assists Rick's review of Case 42 documents\" reviewed=2026-08-22T15:55:55.040145",
+      "delegation del_demo42 owner=user:rick reason=\"Agent17 assists Rick's review of Case 42 documents\" reviewed=2026-08-22T16:12:17.004395",
       "'export' requires human approval under this delegation"
     ],
     "reason": "Agent has delegated access to case:42, but 'export' requires human approval.",
-    "obligation_id": "obl_1e53b46035cb"
+    "obligation_id": "obl_b39b9c3d3f26"
   },
   {
-    "id": "aud_dbcae1312cf8",
-    "timestamp": "2026-08-22T15:56:03.224003",
+    "id": "aud_9b27ec801de9",
+    "timestamp": "2026-08-22T16:12:24.494478",
     "subject": "agent:A17",
     "principal": "user:rick",
     "action": "read",
@@ -31,15 +31,15 @@
       "doc:123 belongsTo case:42",
       "agent:A17 actsOnBehalfOf user:rick",
       "delegation del_demo42 scoped to case:42",
-      "delegation del_demo42 owner=user:rick reason=\"Agent17 assists Rick's review of Case 42 documents\" reviewed=2026-08-22T15:55:55.040145",
+      "delegation del_demo42 owner=user:rick reason=\"Agent17 assists Rick's review of Case 42 documents\" reviewed=2026-08-22T16:12:17.004395",
       "delegation permits 'read' (cedar evaluator)"
     ],
     "reason": "Delegation grants 'read' within scope case:42.",
     "obligation_id": null
   },
   {
-    "id": "aud_662f375f28a5",
-    "timestamp": "2026-08-22T15:56:19.819244",
+    "id": "aud_af30c4dbfcd2",
+    "timestamp": "2026-08-22T16:12:31.294109",
     "subject": "agent:A17",
     "principal": "user:rick",
     "action": "export",
@@ -50,16 +50,16 @@
       "doc:123 belongsTo case:42",
       "agent:A17 actsOnBehalfOf user:rick",
       "delegation del_demo42 scoped to case:42",
-      "delegation del_demo42 owner=user:rick reason=\"Agent17 assists Rick's review of Case 42 documents\" reviewed=2026-08-22T15:55:55.040145",
+      "delegation del_demo42 owner=user:rick reason=\"Agent17 assists Rick's review of Case 42 documents\" reviewed=2026-08-22T16:12:17.004395",
       "'export' requires human approval under this delegation",
-      "obligation obl_1e53b46035cb already discharged by user:rick at 2026-08-22T15:56:16.683555"
+      "obligation obl_b39b9c3d3f26 already discharged by user:rick at 2026-08-22T16:12:28.037022"
     ],
     "reason": "Agent has delegated access to case:42, but 'export' requires human approval.",
-    "obligation_id": "obl_1e53b46035cb"
+    "obligation_id": "obl_b39b9c3d3f26"
   },
   {
-    "id": "aud_96b2b909705c",
-    "timestamp": "2026-08-22T15:56:19.822070",
+    "id": "aud_f588be4731a5",
+    "timestamp": "2026-08-22T16:12:31.296917",
     "subject": "agent:A17",
     "principal": "user:rick",
     "action": "export",
@@ -70,12 +70,12 @@
       "doc:123 belongsTo case:42",
       "agent:A17 actsOnBehalfOf user:rick",
       "delegation del_demo42 scoped to case:42",
-      "delegation del_demo42 owner=user:rick reason=\"Agent17 assists Rick's review of Case 42 documents\" reviewed=2026-08-22T15:55:55.040145",
+      "delegation del_demo42 owner=user:rick reason=\"Agent17 assists Rick's review of Case 42 documents\" reviewed=2026-08-22T16:12:17.004395",
       "'export' requires human approval under this delegation",
-      "obligation obl_1e53b46035cb already discharged by user:rick at 2026-08-22T15:56:16.683555",
-      "obligation obl_1e53b46035cb discharged by user:rick at 2026-08-22T15:56:16.683555 \u2014 completing now"
+      "obligation obl_b39b9c3d3f26 already discharged by user:rick at 2026-08-22T16:12:28.037022",
+      "obligation obl_b39b9c3d3f26 discharged by user:rick at 2026-08-22T16:12:28.037022 \u2014 completing now"
     ],
-    "reason": "Completed after obligation obl_1e53b46035cb was discharged.",
-    "obligation_id": "obl_1e53b46035cb"
+    "reason": "Completed after obligation obl_b39b9c3d3f26 was discharged.",
+    "obligation_id": "obl_b39b9c3d3f26"
   }
 ]

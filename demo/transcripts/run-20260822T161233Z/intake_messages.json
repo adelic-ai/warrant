@@ -1,0 +1,182 @@
+[
+  {
+    "role": "user",
+    "content": [
+      {
+        "text": "Please review doc:123. Get it summarized by a sub-agent, then request its export."
+      }
+    ],
+    "tracking_id": "5b24bfaf-fb35-4a77-bb5c-54340b97d0c1"
+  },
+  {
+    "role": "assistant",
+    "content": [
+      {
+        "reasoningContent": {
+          "reasoningText": {
+            "text": "",
+            "signature": "EpAFCpABCBEYAipA+83EmZbv0nvkLFxEGPx1Ehc8JwMBpMYf2DrY8w6YttNlqX587jismXQx39qQxHXemPuGeXNmT41mDDpyNM9L7zIPY2xhdWRlLXNvbm5ldC01OABCCHRoaW5raW5nWiQwNTAzY2Y3Mi0xOWY2LTRkNjYtODQ5Yi04NGZlMTZkMjA1YjioAeaUp9QGEgxTbB/rvCoV9xXiMy0aDLh5SBohPyj7Tf/9QyIwyHTcklp1qtIBAaK0KGJAhSSJE/GX7EQ8aho0a11K0cNDGWXDKR0GnWax+t7Dq1MrKqwDJMrXxXFqi4YE4UXwPj3Q2l0973xy+2aXN2APTz3tbBOfAm6QjiAQnQDcsBdYsa/JKwSjayvRViFvsTLM9FuXw44LALe2F5mhrDnG1K8uzGmu6gYY+dVh56GVnv/vZXn4EhVlpPeU/V/FUsMTLnIYxsBb6duI8kf351OCdph27T27xKDqC0b1kXFpyiDAzw+6F+zz0AtuKoFmQRux4mGyn67fmESQtWg7gTzaGCJUXKI1RpadWEDuoyT2IGil9dDedu468Yw1Ms1LUpps9QDDLSoW40UZVN0lyN7PfrLojICkW1U0rcub4o1Ykb9dv6VKQIswwsJ+QIyirhWXrHHO9QNrX0rEPtWlr/hi3ttrKmOQ3uu08SHaXQbj0/mdwX74vHH8YSMue+Bhg2EP6K80wpKkCyx6Z7pErZ/IsDJFlLzfAZaAWrE8ay1td8/CJW6kWdOp4g2SR90TB1ipyID7tq+hGiN4wdbpxR/2gJ9Ewb8zuX5YJvg7B2+yyM5H0QnPZFGTaZcMAwa67JiOPtPnMo4DawbpnQIO/DwCI3XRyjeofPGjlKGXY9nGrmcYAQ=="
+          }
+        }
+      },
+      {
+        "toolUse": {
+          "toolUseId": "toolu_01LFbKjWm8X9yYsvdtMFqokJ",
+          "name": "delegate_to_subagent",
+          "input": {
+            "doc_id": "doc:123"
+          }
+        }
+      },
+      {
+        "toolUse": {
+          "toolUseId": "toolu_01Vas2NzUfCJ1K6QPxMUjEn1",
+          "name": "request_export",
+          "input": {
+            "doc_id": "doc:123"
+          }
+        }
+      }
+    ],
+    "metadata": {
+      "usage": {
+        "inputTokens": 988,
+        "outputTokens": 238,
+        "totalTokens": 1226
+      },
+      "metrics": {
+        "latencyMs": 0,
+        "timeToFirstByteMs": 2297
+      }
+    },
+    "tracking_id": "9b31962b-1ca4-4310-aaf6-cf38930e72f8"
+  },
+  {
+    "role": "user",
+    "content": [
+      {
+        "toolResult": {
+          "toolUseId": "toolu_01LFbKjWm8X9yYsvdtMFqokJ",
+          "status": "success",
+          "content": [
+            {
+              "text": "The document is a brief excerpt from a deposition transcript related to Case 42.\n"
+            }
+          ]
+        }
+      },
+      {
+        "toolResult": {
+          "toolUseId": "toolu_01Vas2NzUfCJ1K6QPxMUjEn1",
+          "status": "success",
+          "content": [
+            {
+              "text": "Export requires human approval (obligation_id=obl_b39b9c3d3f26). Not completed yet."
+            }
+          ]
+        }
+      }
+    ],
+    "tracking_id": "8d10334c-e827-49c8-abc4-0ede1ce319b8"
+  },
+  {
+    "role": "assistant",
+    "content": [
+      {
+        "text": "Here's the status on doc:123:\n\n- **Summary (via sub-agent):** It's a brief excerpt from a deposition transcript related to Case 42.\n- **Export request:** Submitted, but it requires human approval (obligation_id: `obl_b39b9c3d3f26`). It has not completed yet \u2014 I'll need approval before the export can go through."
+      }
+    ],
+    "metadata": {
+      "usage": {
+        "inputTokens": 1348,
+        "outputTokens": 116,
+        "totalTokens": 1464
+      },
+      "metrics": {
+        "latencyMs": 0,
+        "timeToFirstByteMs": 1008
+      }
+    },
+    "tracking_id": "db06b9e7-e9bf-463c-957e-c9daf9971ce2"
+  },
+  {
+    "role": "user",
+    "content": [
+      {
+        "text": "Please request the export of doc:123 again now."
+      }
+    ],
+    "tracking_id": "d284ab3e-c404-4a24-a448-fd0c3506e8dc"
+  },
+  {
+    "role": "assistant",
+    "content": [
+      {
+        "reasoningContent": {
+          "reasoningText": {
+            "text": "",
+            "signature": "Er4ECpABCBEYAipAaRvCNqISgyXZRXU8WIpuRCpscMJx5uAImlvjqWDRmsVOkpA6jmR66TJSRzimyqmtldplIYf8ZJFDW4CrFcDKbTIPY2xhdWRlLXNvbm5ldC01OABCCHRoaW5raW5nWiQwNTAzY2Y3Mi0xOWY2LTRkNjYtODQ5Yi04NGZlMTZkMjA1YjioAe+Up9QGEgzYOUgSQi4tA/kiR1IaDLWcB4D/9MUqg3+9qiIws/zChuS3C3elyHE+9Bc2U3HyNbRGRYI4J+f/6G8CHZQkiJVIFtLhK92Rmsploe3jKtoCEGAurK0dgMKIFTW8u19blJQynHMv4bNwzZfxdDTBLpJcndG7vokGF4/tOH40taKtT0UuR3I/KQenHKS6osOA7wUd0oEt5NAFP+P8DR5/5KexE9sOgcQbxl9qUlVItXKWTahh98/FgpnvNrUKWbUY5QwhqRtNwx+Dow0KCgv6Hid4H3+nn7U10EC+IprSBt9cAFdkTmfYgV523ofFo5F/d3LQfbZOshKRorsofuLaNV7DXtYHMG1jVljzbc+2Msbt931vyYQ+uZbkNbPcxiUWR/c9x1LsIk12qAHPNjQglqgS7PDQVkeywMrS7Z+kjaODhHVVGpcrM9OgO3303DIYS04anuZIhzbe5fpvlA+vSzlA39YMtHjRex/DgQ8WwKo+mw/lEKOV4PvqAPpDdJDyPZC00/68KJVUMxwI+/ejTs0Tt86khC78MF1dbij8ILblIMXgXjIOgYJvnhgB"
+          }
+        }
+      },
+      {
+        "toolUse": {
+          "toolUseId": "toolu_01Q3ox4uvcVJ4nSMPjeg8P47",
+          "name": "request_export",
+          "input": {
+            "doc_id": "doc:123"
+          }
+        }
+      }
+    ],
+    "metadata": {
+      "usage": {
+        "inputTokens": 1480,
+        "outputTokens": 158,
+        "totalTokens": 1638
+      },
+      "metrics": {
+        "latencyMs": 0,
+        "timeToFirstByteMs": 2080
+      }
+    },
+    "tracking_id": "dba96851-7ee3-4f56-b46e-691b946229af"
+  },
+  {
+    "role": "user",
+    "content": [
+      {
+        "toolResult": {
+          "toolUseId": "toolu_01Q3ox4uvcVJ4nSMPjeg8P47",
+          "status": "success",
+          "content": [
+            {
+              "text": "Export completed: Case 42 \u2014 deposition transcript excerpt."
+            }
+          ]
+        }
+      }
+    ],
+    "tracking_id": "ecbb37dd-3f53-4f24-8015-6bd8125c5e4a"
+  },
+  {
+    "role": "assistant",
+    "content": [
+      {
+        "text": "Export completed: **Case 42 \u2014 deposition transcript excerpt** has been successfully exported."
+      }
+    ],
+    "metadata": {
+      "usage": {
+        "inputTokens": 1664,
+        "outputTokens": 33,
+        "totalTokens": 1697
+      },
+      "metrics": {
+        "latencyMs": 0,
+        "timeToFirstByteMs": 1215
+      }
+    },
+    "tracking_id": "c4ff8720-ab0a-4a77-84f5-4e272225e5ae"
+  }
+]
