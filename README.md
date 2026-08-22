@@ -11,17 +11,12 @@ Cedar-backed policy decision point evaluates every action, and a gateway enforce
 injecting downstream credentials the agent itself never sees, and completing "requires approval"
 actions only after checking a real approval record, not a self-reported flag.
 
-## Why this project exists
+## Concept
 
-[removed]
-
-**Scope boundary.** This project is IAM — identity, delegation, authorization, entitlement, audit.
-It's deliberately narrower than full "enterprise agentic-deployment security" (sandboxing, egress
-control, prompt-injection defense, fleet-wide observability). That broader problem is a sibling
-project, `warden` (same author — link TODO once it's public) — a governed-LLM-deployment PoC that
-reconciles what an agent *said* it did against unforgeable host-level ground truth. `warrant` and `warden` share one
-thesis — don't trust an agent's self-report — applied at two different layers: `warden` at the
-OS/network level, `warrant` at the authorization/obligation level (see "Design principles" below).
+A prototype, not a product — the IAM slice of a scaffold shaped by Roblox's *Caging the Agent*
+(Black Hat USA 2026): identity, scoped delegation, policy decisions, and audit for an AI agent
+acting on behalf of a human. `warden` (sibling project, same author) covers the other half of that
+scaffold — containment and reconciliation at the OS/network level, not authorization.
 
 ## Architecture
 
