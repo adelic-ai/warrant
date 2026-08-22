@@ -122,6 +122,60 @@ def exchange(
     return jwt.encode(claims, _SIGNING_KEY, algorithm=ALG)
 
 
+def exchange_chained(
+    session: Session,
+    *,
+    parent_token: str,
+    sub_actor_cert_pem: bytes,
+    requested_actions: list[str],
+) -> str:
+    """Second (or later) hop of a delegation chain: agent A holds a token from the first
+    exchange and wants to delegate a (narrower) subset of it to sub-agent B. `act` nests —
+    the new token's `act.sub` is B, with A's whole `act` object preserved underneath — so the
+    full chain is inspectable from the token alone: "sub, acted upon by B, acted upon by A."
+
+    The scope-non-increase invariant is the entire enforcement here: `requested_actions` must be
+    a subset of the *parent token's own* `scope` claim. No Delegation DB row is consulted for
+    this hop — the parent token's scope already is the ceiling, by construction of the first
+    hop's own exchange. `session` is accepted for interface symmetry with `exchange()` even
+    though this function doesn't touch the DB; kept in case a future hop needs the delegation_id
+    to look up per-hop policy.
+    """
+    del session  # not needed yet — see docstring
+    try:
+        parent_claims = verify_exchanged_token(parent_token)
+    except ExchangeError as exc:
+        raise ExchangeError(f"invalid parent_token: {exc}") from exc
+
+    sub_spiffe_id = CA.verify(sub_actor_cert_pem)
+    if sub_spiffe_id is None:
+        raise ExchangeError("sub-agent actor assertion (SVID) failed verification")
+
+    parent_scope = set(parent_claims.get("scope", []))
+    if not requested_actions:
+        raise ExchangeError("requested_actions must be non-empty")
+    widened = set(requested_actions) - parent_scope
+    if widened:
+        raise ExchangeError(
+            f"requested_actions exceeds the parent token's own scope {sorted(parent_scope)}: "
+            f"{sorted(widened)}"
+        )
+
+    now = datetime.datetime.now(datetime.timezone.utc)
+    claims = {
+        "sub": parent_claims["sub"],
+        "act": {"sub": sub_spiffe_id, "act": parent_claims["act"]},
+        "scope": requested_actions,
+        "aud": AUDIENCE,
+        "iss": "sage",
+        "delegation_id": parent_claims.get("delegation_id"),
+        "iat": now,
+        "exp": now + datetime.timedelta(minutes=EXCHANGED_TOKEN_TTL_MINUTES),
+        "jti": uuid.uuid4().hex,
+    }
+    return jwt.encode(claims, _SIGNING_KEY, algorithm=ALG)
+
+
 def verify_exchanged_token(token: str) -> dict:
     try:
         claims = _decode(token)
