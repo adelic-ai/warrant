@@ -16,6 +16,7 @@ from typing import Optional
 
 from sqlmodel import Session
 
+from sage.audit import record_completion
 from sage.downstream import INTERNAL_KEY, DownstreamAuthError, fetch_document
 from sage.models import Decision, Obligation
 from sage.pdp import decide
@@ -81,6 +82,18 @@ def handle(session: Session, *, access_token: str, action: str, resource_id: str
             except (DownstreamAuthError, KeyError) as exc:
                 raise GatewayError(f"downstream fetch failed: {exc}") from exc
             decision = Decision.PERMIT
+            # A distinct audit event for the completion itself — the underlying decide() call
+            # above still logged REQUIRE_APPROVAL (it has no notion of discharge state), so
+            # without this the trail would never show that the action actually completed.
+            record_completion(
+                session,
+                subject_id=agent_id,
+                principal_id=principal_id,
+                action=action,
+                resource_id=resource_id,
+                obligation_id=obligation.id,
+                facts=facts,
+            )
 
     return GatewayResult(
         decision=decision,
