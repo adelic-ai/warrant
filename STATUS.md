@@ -43,13 +43,22 @@ the original hands-off prompt this was based on (kept for transparency, not exec
   mandatory-approval-gate guarantee simple and structurally non-bypassable mattered more than the
   feature, and adding it would mean carefully re-proving that guarantee still holds with an LLM
   proposing scope changes in the loop.
-- Phase 9 — a Strands-orchestrated multi-agent demo workload as the thing this service governs
-  (still under discussion — see the conversation this was built from for what that would look
-  like: a small real multi-agent pipeline with its own identities, put under `sage`'s
-  authorization, to demonstrate a genuine 3+-hop delegation chain instead of the synthetic one the
-  test suite already exercises).
 - Everything in `warden`'s domain: sandboxing, egress control, prompt-injection defense, runtime
   process/network reconciliation.
+
+## Phase 9 — built (not skipped after all)
+
+A real Strands-orchestrated demo (`demo/`), genuinely LLM-driven (Claude Sonnet 5), not scripted.
+See `demo/README.md`. It found and drove the fix for a real bug: `sage/gateway.py` was checking
+the PDP against the immediate caller's identity instead of the delegation chain's root, so every
+sub-agent was wrongly denied — the 41-test suite hadn't caught it. Fixed with a regression test
+added directly from the failure. One real run's transcript + `sage`'s own audit trail from it are
+checked in under `demo/transcripts/`.
+
+Also added along the way, not in the original phase plan: `POST /token/exchange/chain` (the
+chained-exchange function existed only in-process before this — the demo needed it over HTTP) and
+`GET /audit/log` (a read-only full trail, needed to pair the agent transcript with sage's own
+record).
 
 ## Remaining manual steps
 

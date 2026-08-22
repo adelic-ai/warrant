@@ -1,0 +1,182 @@
+[
+  {
+    "role": "user",
+    "content": [
+      {
+        "text": "Please review doc:123. Get it summarized by a sub-agent, then request its export."
+      }
+    ],
+    "tracking_id": "61b1b272-3dfa-40e8-b1ea-7fc7ad891237"
+  },
+  {
+    "role": "assistant",
+    "content": [
+      {
+        "reasoningContent": {
+          "reasoningText": {
+            "text": "",
+            "signature": "EsoHCpABCBEYAipA09FPxhydXCxsMpqjcTUL0+31DL8saD8TDvSRevxEDuzgXDoViZc8aACKbPol/dRxocKPBLpfbmTaH9uI4VLC/zIPY2xhdWRlLXNvbm5ldC01OABCCHRoaW5raW5nWiQwNTAzY2Y3Mi0xOWY2LTRkNjYtODQ5Yi04NGZlMTZkMjA1YjioAZGNp9QGEgwZ25Cjio12pzjrckYaDLV8CusSBzu4R42csSIwiz8wJWW2TITObF+sRuvZ40T7hl2chVIB6GvtiBn7OVkoDiyPxfOryvp2uqHONhLDKuYFOW4eyPvsrY/3rQKb4Ee5fyjmDGT4FkuPh0r9CxCN+TObiUnabN9I+c/FmNXjXy/g9AIVmQ1EwOIC4N1cd4z7ILNx4DBGAu7TdTHZE7yyWXrxmruPs/kd5KHxwbBFUsk60lSlzFA3RE1kmZuJD4bPNTsibmGqYb2YT2L45mFFm/Vxgc+jbVZ4G9g8wejCAtrHfV6MT6CVBjuxZQz1vHXPLKMrVr+JDdGeCj1IbTDlPuGbSj2uv++LeBJXvTpOggQfWCAhWl2jvpxpQfD0VH8IUU0R8QSStRVjjiJ21CRoHuWBQcXQ3eLAHDPy5EmvVAl7bUwqLFa49K313T0Vg/j3L0GVVWuGMRJZkPPZrfI5BWrag0Iqo1aWZX94+fPKXEavmxs+UbaZDJMZv43uX0g6NLa45XskS4RzWzROpgf5PJ121Q7AMlJC7zo2VbhZofPhsz8a3z9Q4ivQJZzG+T5iOy8f2gnZe7DwmcLEh2AkUCWvDsYCL3dkzhKDilMvV9HZxJGJcRWZOalQ5kNoAwNItTiphGeqv4Y/KfUyEqOlAdSlhOp3K9uuGLfkcARUnhxsGKZnZlJoPrEBlpRhVZTjH3YmxLPzTIN6aGwaJ813WMFnpTrqsKhEjqCzEkFc9DQXfuRZesCCDoCypUXnPoW5S6m6EzDl/iivBsZksbwAo9ksiXg3yUsj77MZR8QOXGRfpgaara+t1OV7zUDFRrR5vubv6+1Uf2S8A5z53s3Yca9i8CW+9zxg0MNksjRAJQ+KsdwGV7fE7t0WjUyQw7/Ihzcx9LS6lPt5Z9EHX9bGX0BzPNmWLiHraB3xt+ShfI8y01CGlHzh9Zo8/ds8MHOIQV9ze8TU8srTn/wtP/uLu5ffTulcjk9VEFz58WQpisW8M3v1f9X0kQCVTZG47a6a6ZmZnehUsDLlmYd1nBMNGdfsRQ5PFkL8USzasgccSSYYBniqOJb2fkZXmRHjt3taXvdqv4hBcxgB"
+          }
+        }
+      },
+      {
+        "toolUse": {
+          "toolUseId": "toolu_01TMwFymPTfRadXLX2XYNGXb",
+          "name": "delegate_to_subagent",
+          "input": {
+            "doc_id": "doc:123"
+          }
+        }
+      },
+      {
+        "toolUse": {
+          "toolUseId": "toolu_01BaR4YZwg4stJHTWSxRsDe3",
+          "name": "request_export",
+          "input": {
+            "doc_id": "doc:123"
+          }
+        }
+      }
+    ],
+    "metadata": {
+      "usage": {
+        "inputTokens": 987,
+        "outputTokens": 317,
+        "totalTokens": 1304
+      },
+      "metrics": {
+        "latencyMs": 0,
+        "timeToFirstByteMs": 3066
+      }
+    },
+    "tracking_id": "0887c476-556a-4081-a7db-d537d1ae1c60"
+  },
+  {
+    "role": "user",
+    "content": [
+      {
+        "toolResult": {
+          "toolUseId": "toolu_01TMwFymPTfRadXLX2XYNGXb",
+          "status": "success",
+          "content": [
+            {
+              "text": "Summary: Doc:123 is a brief excerpt from a deposition transcript associated with Case 42.\n"
+            }
+          ]
+        }
+      },
+      {
+        "toolResult": {
+          "toolUseId": "toolu_01BaR4YZwg4stJHTWSxRsDe3",
+          "status": "success",
+          "content": [
+            {
+              "text": "Export requires human approval (obligation_id=obl_1e53b46035cb). Not completed yet."
+            }
+          ]
+        }
+      }
+    ],
+    "tracking_id": "62862387-2cf7-47b7-873e-6da2cf2ceb18"
+  },
+  {
+    "role": "assistant",
+    "content": [
+      {
+        "text": "**Summary (via sub-agent):** Doc:123 is a brief excerpt from a deposition transcript associated with Case 42.\n\n**Export status:** Requested, but it requires human approval (obligation_id=obl_1e53b46035cb) \u2014 not yet completed. I'll wait for approval rather than retry."
+      }
+    ],
+    "metadata": {
+      "usage": {
+        "inputTokens": 1434,
+        "outputTokens": 103,
+        "totalTokens": 1537
+      },
+      "metrics": {
+        "latencyMs": 0,
+        "timeToFirstByteMs": 11308
+      }
+    },
+    "tracking_id": "b759e537-517c-400c-bd21-762c7dd6d4ee"
+  },
+  {
+    "role": "user",
+    "content": [
+      {
+        "text": "Please request the export of doc:123 again now."
+      }
+    ],
+    "tracking_id": "fbcb71bd-9dd2-409b-840d-77bdf497fb25"
+  },
+  {
+    "role": "assistant",
+    "content": [
+      {
+        "reasoningContent": {
+          "reasoningText": {
+            "text": "",
+            "signature": "Eu8CCpABCBEYAipABH8N3DtpNU/8cd7rxzKs4Oy6yp3JnLPkL3IGOKpnRTGPJd1rROfLCkpUUSuteiPYu8YRVCjULN+tUb+0a9wTlTIPY2xhdWRlLXNvbm5ldC01OABCCHRoaW5raW5nWiQwNTAzY2Y3Mi0xOWY2LTRkNjYtODQ5Yi04NGZlMTZkMjA1YjioAaONp9QGEgzXiJzXUkZgQNDMKhoaDFp6PTk+0DEsntjHlCIwFYP/Qth75nZ350gwolYX9lteL/23SNWe6gdnDKFJZ0TeJAJ4jPevw4vsjRxs5mK+KosBH3MX3REtaqO8GCcxLkMOsB3imyXsEUawCjBWInt4KlW9fbtLxsRowfs4fyK+FhuT2WTHfUURSNukWPzQHJYuisg8WEsmzAQ99sUsR+cS4se89PXysmI23aMLWnS13/1803P861m/nCX6czHpARSOXzidT2IiQjrrzqWGJ63pXxCSS5+1p+JJunop9xgB"
+          }
+        }
+      },
+      {
+        "toolUse": {
+          "toolUseId": "toolu_01K9s9uNe61YVxr25P63ADjj",
+          "name": "request_export",
+          "input": {
+            "doc_id": "doc:123"
+          }
+        }
+      }
+    ],
+    "metadata": {
+      "usage": {
+        "inputTokens": 1553,
+        "outputTokens": 96,
+        "totalTokens": 1649
+      },
+      "metrics": {
+        "latencyMs": 0,
+        "timeToFirstByteMs": 2866
+      }
+    },
+    "tracking_id": "a48fb105-76d1-47cc-8c54-b4b5f349ed83"
+  },
+  {
+    "role": "user",
+    "content": [
+      {
+        "toolResult": {
+          "toolUseId": "toolu_01K9s9uNe61YVxr25P63ADjj",
+          "status": "success",
+          "content": [
+            {
+              "text": "Export completed: Case 42 \u2014 deposition transcript excerpt."
+            }
+          ]
+        }
+      }
+    ],
+    "tracking_id": "b45c1e82-6a11-4a8d-b13f-958431b5e6d2"
+  },
+  {
+    "role": "assistant",
+    "content": [
+      {
+        "text": "Export completed: **doc:123 \u2014 Case 42 deposition transcript excerpt** has been successfully exported."
+      }
+    ],
+    "metadata": {
+      "usage": {
+        "inputTokens": 1675,
+        "outputTokens": 38,
+        "totalTokens": 1713
+      },
+      "metrics": {
+        "latencyMs": 0,
+        "timeToFirstByteMs": 988
+      }
+    },
+    "tracking_id": "ba68e706-39f7-45a8-aec5-56b06fd5ed75"
+  }
+]

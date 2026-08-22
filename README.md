@@ -147,14 +147,24 @@ docker run -p 8000:8000 sage
 | `GET /audit/reconcile` | Flags any completion that predates its own obligation's discharge. |
 | `GET /health` | Liveness + which PDP backend is actually active. |
 
+## Demo — a real Strands-orchestrated run, not a synthetic test
+
+`demo/` runs genuine LLM-driven agents (Claude Sonnet 5, via [Strands](https://github.com/strands-agents/sdk-python))
+against a live `sage` instance over real HTTP — an Intake agent that delegates summarizing to a
+narrower-scoped Summarizer sub-agent via a real second-hop token exchange, requests an export that
+requires human approval, and completes only after the harness (standing in for Rick, never an
+agent) approves it. See `demo/README.md` for the full walkthrough. **This run found a real bug**
+(the gateway was checking policy against the wrong identity in a delegation chain) that the
+41-test suite had missed — fixed, with a regression test, directly from what the run surfaced.
+`demo/transcripts/` has the checked-in evidence from one real run.
+
 ## Explicitly out of scope (this build)
 
 Real SPIRE (node/workload attestation, persistent trust bundle); joiner-mover-leaver automation;
 an LLM-assisted access-request triage feature (considered — see `docs/build-prompt.md` Phase 8 —
 deliberately not built to keep the mandatory-approval-gate guarantee simple and load-bearing rather
-than adding a feature that has to be carefully kept from undermining it); a Strands-orchestrated
-multi-agent demo workload as the thing this service governs (considered — see `docs/build-prompt.md`
-Phase 9); anything in `warden`'s domain (sandboxing, egress control, runtime reconciliation).
+than adding a feature that has to be carefully kept from undermining it); anything in `warden`'s
+domain (sandboxing, egress control, runtime reconciliation).
 
 ## Tests
 
