@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import Depends, FastAPI, Header, HTTPException
 from sqlmodel import Session
 
-from sage.audit import reconcile
+from sage.audit import full_log, reconcile
 from sage.db import get_session, init_db
 from sage.gateway import GatewayError, handle as gateway_handle
 from sage.identity import CA
@@ -121,6 +121,11 @@ def token_exchange_chain(
     except ExchangeError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     return TokenExchangeResponse(access_token=token)
+
+
+@app.get("/audit/log")
+def audit_log(session: Session = Depends(get_session)) -> list[dict]:
+    return full_log(session)
 
 
 @app.get("/audit/reconcile")

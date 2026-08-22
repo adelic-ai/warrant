@@ -46,6 +46,28 @@ def record_completion(
     session.commit()
 
 
+def full_log(session: Session) -> list[dict]:
+    """The complete audit trail, oldest first — every /authorize and gateway decision, each a
+    full justified verdict. Read-only; nothing here is ever mutated after the fact."""
+    records = session.exec(select(AuditRecord).order_by(AuditRecord.timestamp)).all()
+    return [
+        {
+            "id": r.id,
+            "timestamp": r.timestamp.isoformat(),
+            "subject": r.subject_id,
+            "principal": r.principal_id,
+            "action": r.action,
+            "resource": r.resource_id,
+            "decision": r.decision,
+            "policy": r.policy,
+            "facts": json.loads(r.facts),
+            "reason": r.reason,
+            "obligation_id": r.obligation_id,
+        }
+        for r in records
+    ]
+
+
 def reconcile(session: Session) -> list[dict]:
     violations: list[dict] = []
     records = session.exec(select(AuditRecord).where(AuditRecord.policy == COMPLETION_POLICY)).all()
