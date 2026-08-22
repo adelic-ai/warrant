@@ -5,7 +5,7 @@ from typing import Iterator
 
 from sqlmodel import Session, SQLModel, create_engine
 
-DB_PATH = os.environ.get("SAGE_DB_PATH", "sage.db")
+DB_PATH = os.environ.get("WARRANT_DB_PATH", "warrant.db")
 ENGINE = create_engine(f"sqlite:///{DB_PATH}", connect_args={"check_same_thread": False})
 
 

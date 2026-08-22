@@ -1,4 +1,4 @@
-from sage.pdp import PDP_BACKEND
+from warrant.pdp import PDP_BACKEND
 
 
 def test_cedar_backend_is_active():

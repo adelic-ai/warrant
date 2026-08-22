@@ -1,8 +1,8 @@
-from sage.gateway import handle
-from sage.identity import CA
-from sage.models import Decision
-from sage.obligations import ApprovalError, discharge
-from sage.tokens import exchange, issue_subject_token
+from warrant.gateway import handle
+from warrant.identity import CA
+from warrant.models import Decision
+from warrant.obligations import ApprovalError, discharge
+from warrant.tokens import exchange, issue_subject_token
 
 
 def _export_token(session):

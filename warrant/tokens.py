@@ -1,7 +1,7 @@
 """RFC 8693 OAuth 2.0 Token Exchange — delegation, not impersonation.
 
 `exchange()` takes a subject_token (the human's session) and an actor assertion (the agent's
-SPIFFE SVID, from sage.identity) and mints a new token carrying BOTH identities via a nested `act`
+SPIFFE SVID, from warrant.identity) and mints a new token carrying BOTH identities via a nested `act`
 claim: `sub` stays the human, `act.sub` names the agent. Downstream sees "user U, acted upon by
 agent A" — never a token that looks like it came from the human alone. Scope is narrowed to the
 intersection of what the delegation actually grants, not copied wholesale from the subject token.
@@ -9,7 +9,7 @@ intersection of what the delegation actually grants, not copied wholesale from t
 Simplification, disclosed: `issue_subject_token` stands in for a real IdP (Entra/Okta) issuing an
 OIDC ID token to the human. A production deployment would validate a real IdP-issued token here
 instead of minting its own. The signing key is an ephemeral in-process EC key, same as
-`sage.identity`'s CA — regenerated every process start, not persisted. Fine for a prototype; a real
+`warrant.identity`'s CA — regenerated every process start, not persisted. Fine for a prototype; a real
 deployment would use a proper key-management story (KMS-backed, rotated).
 """
 from __future__ import annotations
@@ -21,15 +21,15 @@ import jwt
 from cryptography.hazmat.primitives.asymmetric import ec
 from sqlmodel import Session
 
-from sage.identity import CA
-from sage.pdp import find_active_delegation
+from warrant.identity import CA
+from warrant.pdp import find_active_delegation
 
 ALG = "ES256"
 _SIGNING_KEY = ec.generate_private_key(ec.SECP256R1())
 
 SUBJECT_TOKEN_TTL_MINUTES = 60
 EXCHANGED_TOKEN_TTL_MINUTES = 5
-AUDIENCE = "sage-resources"
+AUDIENCE = "warrant-resources"
 
 
 class ExchangeError(Exception):
@@ -42,7 +42,7 @@ def issue_subject_token(principal_id: str) -> str:
     now = datetime.datetime.now(datetime.timezone.utc)
     claims = {
         "sub": principal_id,
-        "iss": "sage",
+        "iss": "warrant",
         "token_use": "subject",
         "iat": now,
         "exp": now + datetime.timedelta(minutes=SUBJECT_TOKEN_TTL_MINUTES),
@@ -59,7 +59,7 @@ def _decode(token: str) -> dict:
 
 
 def agent_id_from_spiffe(spiffe_id: str) -> str:
-    # "spiffe://sage.local/agent/A17" -> "agent:A17" — the identity id convention used
+    # "spiffe://warrant.local/agent/A17" -> "agent:A17" — the identity id convention used
     # throughout the rest of the models (Identity.id, Delegation.delegate_id).
     return "agent:" + spiffe_id.rsplit("/", 1)[-1]
 
@@ -113,7 +113,7 @@ def exchange(
         "act": {"sub": spiffe_id},
         "scope": requested_actions,
         "aud": AUDIENCE,
-        "iss": "sage",
+        "iss": "warrant",
         "delegation_id": delegation.id,
         "iat": now,
         "exp": now + datetime.timedelta(minutes=EXCHANGED_TOKEN_TTL_MINUTES),
@@ -167,7 +167,7 @@ def exchange_chained(
         "act": {"sub": sub_spiffe_id, "act": parent_claims["act"]},
         "scope": requested_actions,
         "aud": AUDIENCE,
-        "iss": "sage",
+        "iss": "warrant",
         "delegation_id": parent_claims.get("delegation_id"),
         "iat": now,
         "exp": now + datetime.timedelta(minutes=EXCHANGED_TOKEN_TTL_MINUTES),

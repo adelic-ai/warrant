@@ -9,7 +9,7 @@ from datetime import timedelta
 
 from sqlmodel import Session
 
-from sage.models import Delegation, Identity, IdentityKind, Resource, utcnow
+from warrant.models import Delegation, Identity, IdentityKind, Resource, utcnow
 
 
 def seed_demo(session: Session) -> None:

@@ -1,7 +1,7 @@
 """The demo harness. Not an agent — this is the part of the system no agent tool is allowed to
 be: it does Rick's login (stands in for a real IdP) and Rick's approval (stands in for a human
 clicking "approve"), both visibly, both out-of-band from anything Intake or Summarizer can do
-themselves. Everything else runs through real HTTP calls against a live sage instance, real
+themselves. Everything else runs through real HTTP calls against a live warrant instance, real
 Strands agents, real Anthropic API calls.
 """
 from __future__ import annotations
@@ -26,11 +26,11 @@ BASE_URL = f"http://127.0.0.1:{PORT}"
 def seed(db_path: Path) -> None:
     if db_path.exists():
         db_path.unlink()
-    os.environ["SAGE_DB_PATH"] = str(db_path)
+    os.environ["WARRANT_DB_PATH"] = str(db_path)
     from sqlmodel import Session
 
-    from sage.db import ENGINE, init_db
-    from sage.seed import seed_demo
+    from warrant.db import ENGINE, init_db
+    from warrant.seed import seed_demo
 
     init_db(ENGINE)
     with Session(ENGINE) as s:
@@ -39,9 +39,9 @@ def seed(db_path: Path) -> None:
 
 def start_server() -> subprocess.Popen:
     env = os.environ.copy()
-    env["SAGE_DB_PATH"] = str(DB_PATH)
+    env["WARRANT_DB_PATH"] = str(DB_PATH)
     proc = subprocess.Popen(
-        [sys.executable, "-m", "uvicorn", "sage.main:app", "--port", str(PORT)],
+        [sys.executable, "-m", "uvicorn", "warrant.main:app", "--port", str(PORT)],
         cwd=REPO_ROOT,
         env=env,
         stdout=subprocess.PIPE,
@@ -52,14 +52,14 @@ def start_server() -> subprocess.Popen:
         try:
             r = httpx.get(f"{BASE_URL}/health", timeout=1)
             if r.status_code == 200:
-                print(f"sage server up: {r.json()}")
+                print(f"warrant server up: {r.json()}")
                 return proc
         except httpx.HTTPError:
             pass
         time.sleep(0.2)
     proc.terminate()
     out = proc.stdout.read() if proc.stdout else ""
-    raise RuntimeError(f"sage server did not become healthy in time.\n{out}")
+    raise RuntimeError(f"warrant server did not become healthy in time.\n{out}")
 
 
 def main() -> None:
@@ -70,9 +70,9 @@ def main() -> None:
     proc = start_server()
     try:
         from demo.agents import make_intake_agent
-        from demo.sage_client import SageClient
+        from demo.warrant_client import WarrantClient
 
-        client = SageClient(BASE_URL)
+        client = WarrantClient(BASE_URL)
 
         print("\n=== Harness: Rick logs in (stands in for a real IdP) ===")
         subject_token = client.issue_subject_token("user:rick")
@@ -97,7 +97,7 @@ def main() -> None:
         )
         print(f"\n[Intake final response]\n{result1}\n")
 
-        print("=== Harness: checking sage's own audit log for a pending obligation ===")
+        print("=== Harness: checking warrant's own audit log for a pending obligation ===")
         pending = [r for r in client.audit_log() if r["decision"] == "REQUIRE_APPROVAL" and r["obligation_id"]]
         if not pending:
             print("No REQUIRE_APPROVAL obligation found — nothing to approve. Stopping here.")

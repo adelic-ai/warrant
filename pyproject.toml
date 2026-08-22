@@ -1,5 +1,5 @@
 [project]
-name = "sage"
+name = "warrant"
 version = "0.1.0"
 description = "Delegated authorization for AI agents acting on behalf of human principals — identity, delegation, policy decision, and audit for agentic IAM."
 requires-python = ">=3.11"
@@ -27,4 +27,4 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-include = ["sage*"]
+include = ["warrant*"]

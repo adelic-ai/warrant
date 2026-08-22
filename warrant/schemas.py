@@ -4,7 +4,7 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from sage.models import Decision
+from warrant.models import Decision
 
 
 class AuthorizeRequest(BaseModel):

@@ -4,7 +4,7 @@ Per the architecture research this project is built from: Cedar is the substrate
 contribution — it decides one action at a time, permit/forbid only, forbid-overrides-permit as a
 single fixed-priority defeater. Everything this project adds on top (obligation discharge
 tracking, defeater provenance, scope non-increase across a delegation chain) stays outside Cedar,
-in `sage/pdp.py`'s wrapper. This module's only job is: given a Delegation's permitted/forbidden
+in `warrant/pdp.py`'s wrapper. This module's only job is: given a Delegation's permitted/forbidden
 action lists, ask Cedar whether one specific action is allowed.
 
 Delegations are runtime data (rows in the `delegation` table), not a static policy file, so the

@@ -16,11 +16,11 @@ from typing import Optional
 
 from sqlmodel import Session
 
-from sage.audit import record_completion
-from sage.downstream import INTERNAL_KEY, DownstreamAuthError, fetch_document
-from sage.models import Decision, Obligation
-from sage.pdp import decide
-from sage.tokens import ExchangeError, agent_id_from_spiffe, root_spiffe_from_claims, verify_exchanged_token
+from warrant.audit import record_completion
+from warrant.downstream import INTERNAL_KEY, DownstreamAuthError, fetch_document
+from warrant.models import Decision, Obligation
+from warrant.pdp import decide
+from warrant.tokens import ExchangeError, agent_id_from_spiffe, root_spiffe_from_claims, verify_exchanged_token
 
 
 @dataclass

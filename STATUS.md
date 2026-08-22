@@ -49,15 +49,15 @@ the original hands-off prompt this was based on (kept for transparency, not exec
 ## Phase 9 — built (not skipped after all)
 
 A real Strands-orchestrated demo (`demo/`), genuinely LLM-driven (Claude Sonnet 5), not scripted.
-See `demo/README.md`. It found and drove the fix for a real bug: `sage/gateway.py` was checking
+See `demo/README.md`. It found and drove the fix for a real bug: `warrant/gateway.py` was checking
 the PDP against the immediate caller's identity instead of the delegation chain's root, so every
 sub-agent was wrongly denied — the 41-test suite hadn't caught it. Fixed with a regression test
-added directly from the failure. One real run's transcript + `sage`'s own audit trail from it are
+added directly from the failure. One real run's transcript + `warrant`'s own audit trail from it are
 checked in under `demo/transcripts/`.
 
 Also added along the way, not in the original phase plan: `POST /token/exchange/chain` (the
 chained-exchange function existed only in-process before this — the demo needed it over HTTP) and
-`GET /audit/log` (a read-only full trail, needed to pair the agent transcript with sage's own
+`GET /audit/log` (a read-only full trail, needed to pair the agent transcript with warrant's own
 record).
 
 ## Remaining manual steps

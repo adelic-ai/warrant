@@ -5,9 +5,9 @@ from fastapi.testclient import TestClient
 from sqlmodel import Session, SQLModel, create_engine
 from sqlalchemy.pool import StaticPool
 
-from sage.db import get_session
-from sage.main import app
-from sage.seed import seed_demo
+from warrant.db import get_session
+from warrant.main import app
+from warrant.seed import seed_demo
 
 
 @pytest.fixture()

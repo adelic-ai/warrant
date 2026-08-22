@@ -1,11 +1,11 @@
-# sage
+# warrant
 
 Delegated authorization for AI agents acting on behalf of human principals — identity, delegation,
 policy decision, and audit for agentic IAM.
 
 An AI agent acting for a human should not simply inherit that human's identity and permissions. It
 should hold its own attested identity, a scope narrowed to the task, and a decision trail that
-explains itself. `sage` is a working prototype of that: an agent gets a short-lived SPIFFE-shaped
+explains itself. `warrant` is a working prototype of that: an agent gets a short-lived SPIFFE-shaped
 identity, a human delegates a scoped subset of their authority to it via OAuth token exchange, a
 Cedar-backed policy decision point evaluates every action, and a gateway enforces the result —
 injecting downstream credentials the agent itself never sees, and completing "requires approval"
@@ -19,9 +19,9 @@ actions only after checking a real approval record, not a self-reported flag.
 It's deliberately narrower than full "enterprise agentic-deployment security" (sandboxing, egress
 control, prompt-injection defense, fleet-wide observability). That broader problem is a sibling
 project, `warden` (same author — link TODO once it's public) — a governed-LLM-deployment PoC that
-reconciles what an agent *said* it did against unforgeable host-level ground truth. `sage` and `warden` share one
+reconciles what an agent *said* it did against unforgeable host-level ground truth. `warrant` and `warden` share one
 thesis — don't trust an agent's self-report — applied at two different layers: `warden` at the
-OS/network level, `sage` at the authorization/obligation level (see "Design principles" below).
+OS/network level, `warrant` at the authorization/obligation level (see "Design principles" below).
 
 ## Architecture
 
@@ -82,7 +82,7 @@ Nothing here is silently faked — everything below is either fully real or expl
 |---|---|
 | Identity model (human/agent/workload, delegation, obligations) | Real — SQLModel over SQLite |
 | Policy decision (PDP) | **Real Cedar** (`cedarpy`), confirmed at runtime via `/health`'s `pdp_backend` field. A pure-Python fallback evaluator exists and is used automatically if the `cedarpy` wheel isn't available — never a silent downgrade, `PDP_BACKEND` always reports which is active. |
-| Agent identity | **SPIFFE-shaped, not real SPIRE.** Short-lived X.509 certs with a `spiffe://sage.local/agent/<id>` URI SAN, signed by a local CA generated fresh per process. Real SPIRE would add node/workload attestation and a persistent trust bundle — this has neither; disclosed in `sage/identity.py`'s docstring. |
+| Agent identity | **SPIFFE-shaped, not real SPIRE.** Short-lived X.509 certs with a `spiffe://warrant.local/agent/<id>` URI SAN, signed by a local CA generated fresh per process. Real SPIRE would add node/workload attestation and a persistent trust bundle — this has neither; disclosed in `warrant/identity.py`'s docstring. |
 | Delegation | **Real RFC 8693 token exchange** — `act` claim (delegation, not impersonation), scope narrowed to the intersection of what the Delegation grants, enforced at mint time. Chained delegation (agent → sub-agent) is implemented and tested, with the `act` claim nesting and scope non-increase enforced against the parent token's own scope at every hop. |
 | PEP / gateway | Real — an MCP-shaped gateway that validates the token's *own* scope (not just the underlying delegation), calls the PDP, and performs credential injection: the downstream secret is fetched server-side and the caller never sees it (proven by test, not just asserted). |
 | The three deontic seams | All real and tested: obligation discharge as first-class state (a distinct `/approve` call, by the principal only, never the agent, checked against a real `Obligation` row — not a trusted flag); defeater provenance (every non-default-deny decision surfaces who granted the delegation, why, and when it was reviewed); scope non-increase across a real chained delegation. |
@@ -94,7 +94,7 @@ Nothing here is silently faked — everything below is either fully real or expl
 
 - **Justified verdicts, never a bare boolean.** Every `/authorize` and gateway decision returns
   `decision`, `policy`, `facts`, and `reason` — the full derivation, not `{"allowed": false}`.
-- **Credential injection, not brokering** (`sage/gateway.py`) — directly modeled on Roblox's Ring 4
+- **Credential injection, not brokering** (`warrant/gateway.py`) — directly modeled on Roblox's Ring 4
   pattern from *Caging the Agent*: the agent sends a tool call and its own identity; the gateway
   fetches the real credential and injects it mid-flight. The credential is never in the agent's
   reach. Roblox's own published residual-risk admission — that their Ring 5 visibility logs the
@@ -106,7 +106,7 @@ Nothing here is silently faked — everything below is either fully real or expl
   own published ablation shows every verifier they shipped is purely syntactic ("is a field
   non-empty," never "is this correct"), and their measured quality ceiling is attributable to
   exactly that gap, patched only by human-in-the-loop gates that were skippable in autonomous mode.
-  `sage`'s obligation discharge is deliberately **not** skippable — there is no autonomous-mode flag
+  `warrant`'s obligation discharge is deliberately **not** skippable — there is no autonomous-mode flag
   that bypasses it.
 - **SPIFFE + OAuth token exchange, not a bespoke credential.** Chosen because it's the converging
   2026 standard (CNCF's guidance is, verbatim, "SPIFFE for identity, OAuth 2.0 for access
@@ -123,14 +123,14 @@ Nothing here is silently faked — everything below is either fully real or expl
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 pytest -q                              # 38 tests
-uvicorn sage.main:app --reload         # http://127.0.0.1:8000/docs
+uvicorn warrant.main:app --reload         # http://127.0.0.1:8000/docs
 ```
 
 Or via Docker:
 
 ```
-docker build -t sage .
-docker run -p 8000:8000 sage
+docker build -t warrant .
+docker run -p 8000:8000 warrant
 ```
 
 ## API surface
@@ -150,7 +150,7 @@ docker run -p 8000:8000 sage
 ## Demo — a real Strands-orchestrated run, not a synthetic test
 
 `demo/` runs genuine LLM-driven agents (Claude Sonnet 5, via [Strands](https://github.com/strands-agents/sdk-python))
-against a live `sage` instance over real HTTP — an Intake agent that delegates summarizing to a
+against a live `warrant` instance over real HTTP — an Intake agent that delegates summarizing to a
 narrower-scoped Summarizer sub-agent via a real second-hop token exchange, requests an export that
 requires human approval, and completes only after the harness (standing in for Rick, never an
 agent) approves it. See `demo/README.md` for the full walkthrough. **This run found a real bug**

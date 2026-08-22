@@ -15,7 +15,7 @@ import json
 
 from sqlmodel import Session, select
 
-from sage.models import AuditRecord, Decision, Obligation
+from warrant.models import AuditRecord, Decision, Obligation
 
 COMPLETION_POLICY = "OBLIGATION-DISCHARGED-COMPLETION"
 

@@ -1,11 +1,11 @@
-"""Thin HTTP client for sage's API — used by the demo's Strands tools, and by the harness itself
+"""Thin HTTP client for warrant's API — used by the demo's Strands tools, and by the harness itself
 for the out-of-band steps (Rick's login, Rick's approval) that no agent tool should be able to do."""
 from __future__ import annotations
 
 import httpx
 
 
-class SageClient:
+class WarrantClient:
     def __init__(self, base_url: str) -> None:
         self.http = httpx.Client(base_url=base_url, timeout=30.0)
 

@@ -5,13 +5,13 @@ from contextlib import asynccontextmanager
 from fastapi import Depends, FastAPI, Header, HTTPException
 from sqlmodel import Session
 
-from sage.audit import full_log, reconcile
-from sage.db import get_session, init_db
-from sage.gateway import GatewayError, handle as gateway_handle
-from sage.identity import CA
-from sage.obligations import ApprovalError, discharge
-from sage.pdp import PDP_BACKEND, decide
-from sage.schemas import (
+from warrant.audit import full_log, reconcile
+from warrant.db import get_session, init_db
+from warrant.gateway import GatewayError, handle as gateway_handle
+from warrant.identity import CA
+from warrant.obligations import ApprovalError, discharge
+from warrant.pdp import PDP_BACKEND, decide
+from warrant.schemas import (
     ApproveRequest,
     ApproveResponse,
     AuthorizeRequest,
@@ -25,7 +25,7 @@ from sage.schemas import (
     TokenExchangeRequest,
     TokenExchangeResponse,
 )
-from sage.tokens import ExchangeError, exchange, exchange_chained, issue_subject_token
+from warrant.tokens import ExchangeError, exchange, exchange_chained, issue_subject_token
 
 
 def _bearer_token(authorization: str = Header(...)) -> str:
@@ -41,7 +41,7 @@ async def _lifespan(_: FastAPI):
 
 
 app = FastAPI(
-    title="sage",
+    title="Warrant",
     description="Delegated authorization for AI agents acting on behalf of human principals.",
     lifespan=_lifespan,
 )
@@ -77,7 +77,7 @@ def authorize(req: AuthorizeRequest, session: Session = Depends(get_session)) ->
 @app.post("/identity/issue", response_model=IssueIdentityResponse)
 def issue_identity(req: IssueIdentityRequest) -> IssueIdentityResponse:
     """Issues a SPIFFE-shaped SVID for the given agent id. No attestation of the caller — the
-    disclosed gap from sage/identity.py's docstring; a real deployment would verify what's
+    disclosed gap from warrant/identity.py's docstring; a real deployment would verify what's
     actually running before minting an identity for it."""
     svid = CA.issue(req.agent_id)
     return IssueIdentityResponse(spiffe_id=svid.spiffe_id, cert_pem=svid.cert_pem.decode())
@@ -86,7 +86,7 @@ def issue_identity(req: IssueIdentityRequest) -> IssueIdentityResponse:
 @app.post("/token/subject", response_model=SubjectTokenResponse)
 def token_subject(req: SubjectTokenRequest) -> SubjectTokenResponse:
     """Stands in for a real IdP issuing an OIDC ID token to an authenticated human — see
-    sage/tokens.py's module docstring for what a production version would do instead."""
+    warrant/tokens.py's module docstring for what a production version would do instead."""
     return SubjectTokenResponse(subject_token=issue_subject_token(req.principal))
 
 

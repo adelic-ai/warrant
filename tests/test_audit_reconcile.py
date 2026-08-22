@@ -1,12 +1,12 @@
 import datetime
 import json
 
-from sage.audit import COMPLETION_POLICY, reconcile
-from sage.gateway import handle
-from sage.identity import CA
-from sage.models import AuditRecord, Decision, Obligation
-from sage.obligations import discharge
-from sage.tokens import exchange, issue_subject_token
+from warrant.audit import COMPLETION_POLICY, reconcile
+from warrant.gateway import handle
+from warrant.identity import CA
+from warrant.models import AuditRecord, Decision, Obligation
+from warrant.obligations import discharge
+from warrant.tokens import exchange, issue_subject_token
 
 
 def _export_token(session):

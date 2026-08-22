@@ -1,5 +1,5 @@
-from sage.identity import CA
-from sage.tokens import ExchangeError, exchange, exchange_chained, issue_subject_token, verify_exchanged_token
+from warrant.identity import CA
+from warrant.tokens import ExchangeError, exchange, exchange_chained, issue_subject_token, verify_exchanged_token
 
 
 def test_chained_exchange_over_http(client):
@@ -21,11 +21,11 @@ def test_chained_exchange_over_http(client):
         json={"parent_token": hop1, "sub_actor_cert_pem": b1_cert, "requested_actions": ["read"]},
     )
     assert resp.status_code == 200
-    from sage.tokens import verify_exchanged_token as verify
+    from warrant.tokens import verify_exchanged_token as verify
 
     claims = verify(resp.json()["access_token"])
-    assert claims["act"]["sub"] == "spiffe://sage.local/agent/B1"
-    assert claims["act"]["act"]["sub"] == "spiffe://sage.local/agent/A17"
+    assert claims["act"]["sub"] == "spiffe://warrant.local/agent/B1"
+    assert claims["act"]["act"]["sub"] == "spiffe://warrant.local/agent/A17"
     assert claims["scope"] == ["read"]
 
     # And a widen attempt over HTTP is rejected too — hop1 itself has both actions, so construct
@@ -64,8 +64,8 @@ def test_three_hop_chain_scope_narrows_and_both_identities_are_nested(session):
     )
     claims = verify_exchanged_token(hop2)
     assert claims["sub"] == "user:rick"  # the human principal is unchanged, three hops in
-    assert claims["act"]["sub"] == "spiffe://sage.local/agent/B1"
-    assert claims["act"]["act"]["sub"] == "spiffe://sage.local/agent/A17"  # nested, not flattened
+    assert claims["act"]["sub"] == "spiffe://warrant.local/agent/B1"
+    assert claims["act"]["act"]["sub"] == "spiffe://warrant.local/agent/A17"  # nested, not flattened
     assert claims["scope"] == ["read"]
 
 
@@ -91,7 +91,7 @@ def test_chain_rejects_a_widen_attempt_at_the_second_hop(session):
 
 
 def test_chain_rejects_an_unverifiable_sub_actor(session):
-    from sage.identity import LocalCA
+    from warrant.identity import LocalCA
 
     subject_token = issue_subject_token("user:rick")
     hop1 = exchange(

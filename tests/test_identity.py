@@ -1,9 +1,9 @@
-from sage.identity import CA, LocalCA, spiffe_id_for
+from warrant.identity import CA, LocalCA, spiffe_id_for
 
 
 def test_issue_and_verify_roundtrip():
     svid = CA.issue("A17")
-    assert svid.spiffe_id == "spiffe://sage.local/agent/A17"
+    assert svid.spiffe_id == "spiffe://warrant.local/agent/A17"
     verified = CA.verify(svid.cert_pem)
     assert verified == svid.spiffe_id
 
@@ -21,4 +21,4 @@ def test_verify_rejects_cert_from_a_different_ca():
 
 
 def test_spiffe_id_convention():
-    assert spiffe_id_for("A17") == "spiffe://sage.local/agent/A17"
+    assert spiffe_id_for("A17") == "spiffe://warrant.local/agent/A17"

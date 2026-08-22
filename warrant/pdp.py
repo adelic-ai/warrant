@@ -15,8 +15,8 @@ from typing import Optional
 
 from sqlmodel import Session, select
 
-from sage.cedar_backend import CEDAR_AVAILABLE, cedar_permits
-from sage.models import AuditRecord, Decision, Delegation, Obligation, Resource, utcnow
+from warrant.cedar_backend import CEDAR_AVAILABLE, cedar_permits
+from warrant.models import AuditRecord, Decision, Delegation, Obligation, Resource, utcnow
 
 PDP_BACKEND = "cedar" if CEDAR_AVAILABLE else "python-fallback"
 

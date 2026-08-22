@@ -1,5 +1,5 @@
-from sage.identity import CA, LocalCA
-from sage.tokens import ExchangeError, exchange, issue_subject_token, verify_exchanged_token
+from warrant.identity import CA, LocalCA
+from warrant.tokens import ExchangeError, exchange, issue_subject_token, verify_exchanged_token
 
 
 def _actor_cert(agent_id: str = "A17") -> bytes:
@@ -17,7 +17,7 @@ def test_exchange_narrows_scope_and_carries_both_identities(session):
     )
     claims = verify_exchanged_token(token)
     assert claims["sub"] == "user:rick"
-    assert claims["act"]["sub"] == "spiffe://sage.local/agent/A17"
+    assert claims["act"]["sub"] == "spiffe://warrant.local/agent/A17"
     assert claims["scope"] == ["read"]
 
 

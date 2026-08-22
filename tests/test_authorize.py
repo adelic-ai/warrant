@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from sqlmodel import select
 
-from sage.models import AuditRecord, Decision
+from warrant.models import AuditRecord, Decision
 
 
 def test_permit_read_in_scope(client):

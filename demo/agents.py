@@ -12,7 +12,7 @@ from __future__ import annotations
 from strands import Agent, tool
 from strands.models.anthropic import AnthropicModel
 
-from demo.sage_client import SageClient
+from demo.warrant_client import WarrantClient
 
 MODEL_ID = "claude-sonnet-5"
 
@@ -21,10 +21,10 @@ def _model() -> AnthropicModel:
     return AnthropicModel(model_id=MODEL_ID, max_tokens=1024)
 
 
-def make_read_tool(client: SageClient, token: str):
+def make_read_tool(client: WarrantClient, token: str):
     @tool
     def read_document(doc_id: str) -> str:
-        """Read a case document's content through sage's authorization gateway.
+        """Read a case document's content through warrant's authorization gateway.
 
         Args:
             doc_id: the document identifier, e.g. "doc:123"
@@ -37,7 +37,7 @@ def make_read_tool(client: SageClient, token: str):
     return read_document
 
 
-def make_summarizer_agent(client: SageClient, scoped_token: str) -> Agent:
+def make_summarizer_agent(client: WarrantClient, scoped_token: str) -> Agent:
     return Agent(
         model=_model(),
         system_prompt=(
@@ -51,7 +51,7 @@ def make_summarizer_agent(client: SageClient, scoped_token: str) -> Agent:
     )
 
 
-def make_delegate_tool(client: SageClient, parent_token: str):
+def make_delegate_tool(client: WarrantClient, parent_token: str):
     @tool
     def delegate_to_subagent(doc_id: str) -> str:
         """Delegate summarizing one document to a fresh, narrowly-scoped Summarizer sub-agent.
@@ -77,7 +77,7 @@ def make_delegate_tool(client: SageClient, parent_token: str):
     return delegate_to_subagent
 
 
-def make_request_export_tool(client: SageClient, token: str):
+def make_request_export_tool(client: WarrantClient, token: str):
     @tool
     def request_export(doc_id: str) -> str:
         """Request to export a document. This may require human approval before it actually
@@ -100,7 +100,7 @@ def make_request_export_tool(client: SageClient, token: str):
     return request_export
 
 
-def make_intake_agent(client: SageClient, token: str) -> Agent:
+def make_intake_agent(client: WarrantClient, token: str) -> Agent:
     return Agent(
         model=_model(),
         system_prompt=(

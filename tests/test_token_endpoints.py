@@ -2,7 +2,7 @@ def test_identity_issue_endpoint(client):
     resp = client.post("/identity/issue", json={"agent_id": "A17"})
     body = resp.json()
     assert resp.status_code == 200
-    assert body["spiffe_id"] == "spiffe://sage.local/agent/A17"
+    assert body["spiffe_id"] == "spiffe://warrant.local/agent/A17"
     assert "BEGIN CERTIFICATE" in body["cert_pem"]
 
 

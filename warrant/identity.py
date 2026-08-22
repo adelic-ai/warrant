@@ -20,7 +20,7 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.x509.oid import NameOID
 
-TRUST_DOMAIN = "sage.local"
+TRUST_DOMAIN = "warrant.local"
 
 
 def spiffe_id_for(agent_id: str) -> str:
@@ -42,7 +42,7 @@ class LocalCA:
     def __init__(self) -> None:
         self._key = ec.generate_private_key(ec.SECP256R1())
         subject = issuer = x509.Name(
-            [x509.NameAttribute(NameOID.COMMON_NAME, f"sage-local-ca.{TRUST_DOMAIN}")]
+            [x509.NameAttribute(NameOID.COMMON_NAME, f"warrant-local-ca.{TRUST_DOMAIN}")]
         )
         now = datetime.datetime.now(datetime.timezone.utc)
         self._cert = (

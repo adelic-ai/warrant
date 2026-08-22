@@ -1,9 +1,9 @@
 import json
 
-from sage.gateway import GatewayError, handle
-from sage.identity import CA
-from sage.models import Decision
-from sage.tokens import exchange, issue_subject_token
+from warrant.gateway import GatewayError, handle
+from warrant.identity import CA
+from warrant.models import Decision
+from warrant.tokens import exchange, issue_subject_token
 
 
 def _token(session, actions, case="case:42", agent="A17"):
@@ -23,7 +23,7 @@ def test_permit_read_injects_credential_never_exposes_it(session):
     assert result.decision == Decision.PERMIT
     assert "deposition" in result.content
     # The internal credential must never appear anywhere in the result we hand back to the caller.
-    from sage.downstream import INTERNAL_KEY
+    from warrant.downstream import INTERNAL_KEY
 
     serialized = json.dumps(result.__dict__)
     assert INTERNAL_KEY not in serialized
@@ -62,7 +62,7 @@ def test_gateway_permits_a_sub_agent_using_a_chained_token(session):
     # Delegation row of its own — its authority is a narrowed view of A17's, via a chained token.
     # The gateway must check the PDP against the chain's root, not demand a fresh Delegation for
     # every hop, or every sub-agent gets wrongly denied.
-    from sage.tokens import exchange_chained
+    from warrant.tokens import exchange_chained
 
     parent_token = _token(session, ["read"])
     sub_identity = CA.issue("B1")

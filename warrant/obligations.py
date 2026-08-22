@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from sqlmodel import Session
 
-from sage.models import Identity, IdentityKind, Obligation, utcnow
+from warrant.models import Identity, IdentityKind, Obligation, utcnow
 
 
 class ApprovalError(Exception):
