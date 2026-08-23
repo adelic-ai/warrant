@@ -51,7 +51,7 @@ def make_summarizer_agent(client: WarrantClient, scoped_token: str) -> Agent:
     )
 
 
-def make_delegate_tool(client: WarrantClient, parent_token: str):
+def make_delegate_tool(client: WarrantClient, parent_token: str, sub_bootstrap_token: str):
     @tool
     def delegate_to_subagent(doc_id: str) -> str:
         """Delegate summarizing one document to a fresh, narrowly-scoped Summarizer sub-agent.
@@ -64,7 +64,7 @@ def make_delegate_tool(client: WarrantClient, parent_token: str):
         Args:
             doc_id: the document identifier to summarize, e.g. "doc:123"
         """
-        sub_identity = client.issue_identity("B1")
+        sub_identity = client.issue_identity("B1", bootstrap_token=sub_bootstrap_token)
         scoped_token = client.exchange_chained(
             parent_token=parent_token,
             sub_actor_cert_pem=sub_identity["cert_pem"],
@@ -100,7 +100,7 @@ def make_request_export_tool(client: WarrantClient, token: str):
     return request_export
 
 
-def make_intake_agent(client: WarrantClient, token: str) -> Agent:
+def make_intake_agent(client: WarrantClient, token: str, sub_bootstrap_token: str) -> Agent:
     return Agent(
         model=_model(),
         system_prompt=(
@@ -111,7 +111,7 @@ def make_intake_agent(client: WarrantClient, token: str) -> Agent:
         ),
         tools=[
             make_read_tool(client, token),
-            make_delegate_tool(client, token),
+            make_delegate_tool(client, token, sub_bootstrap_token),
             make_request_export_tool(client, token),
         ],
         name="Intake",

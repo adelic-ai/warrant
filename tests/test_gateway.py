@@ -1,5 +1,6 @@
 import json
 
+from tests.conftest import bootstrap_headers
 from warrant.gateway import GatewayError, handle
 from warrant.identity import CA
 from warrant.models import Decision
@@ -80,7 +81,9 @@ def test_gateway_permits_a_sub_agent_using_a_chained_token(session):
 
 def test_gateway_over_http(client):
     subject_token = client.post("/token/subject", json={"principal": "user:rick"}).json()["subject_token"]
-    cert_pem = client.post("/identity/issue", json={"agent_id": "A17"}).json()["cert_pem"]
+    cert_pem = client.post(
+        "/identity/issue", json={"agent_id": "A17"}, headers=bootstrap_headers("A17")
+    ).json()["cert_pem"]
     access_token = client.post(
         "/token/exchange",
         json={

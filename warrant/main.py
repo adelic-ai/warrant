@@ -8,7 +8,7 @@ from sqlmodel import Session
 from warrant.audit import full_log, reconcile
 from warrant.db import get_session, init_db
 from warrant.gateway import GatewayError, handle as gateway_handle
-from warrant.identity import CA
+from warrant.identity import CA, check_bootstrap_token
 from warrant.obligations import ApprovalError, discharge
 from warrant.pdp import PDP_BACKEND, decide
 from warrant.schemas import (
@@ -75,10 +75,18 @@ def authorize(req: AuthorizeRequest, session: Session = Depends(get_session)) ->
 
 
 @app.post("/identity/issue", response_model=IssueIdentityResponse)
-def issue_identity(req: IssueIdentityRequest) -> IssueIdentityResponse:
-    """Issues a SPIFFE-shaped SVID for the given agent id. No attestation of the caller — the
-    disclosed gap from warrant/identity.py's docstring; a real deployment would verify what's
-    actually running before minting an identity for it."""
+def issue_identity(
+    req: IssueIdentityRequest, x_bootstrap_token: str = Header(default=None)
+) -> IssueIdentityResponse:
+    """Issues a SPIFFE-shaped SVID for the given agent id, gated on a pre-shared bootstrap token
+    for that specific agent_id (WARRANT_BOOTSTRAP_TOKENS) — not real attestation of what's
+    actually running (the remaining disclosed gap, see warrant/identity.py's docstring), but it
+    closes "any caller can mint an identity for any agent_id" down to "you need the secret
+    provisioned out-of-band for this one"."""
+    if not check_bootstrap_token(req.agent_id, x_bootstrap_token):
+        raise HTTPException(
+            status_code=401, detail=f"missing or invalid bootstrap token for agent_id={req.agent_id!r}"
+        )
     svid = CA.issue(req.agent_id)
     return IssueIdentityResponse(spiffe_id=svid.spiffe_id, cert_pem=svid.cert_pem.decode())
 

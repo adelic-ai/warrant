@@ -1,10 +1,13 @@
+from tests.conftest import bootstrap_headers
 from warrant.identity import CA
 from warrant.tokens import ExchangeError, exchange, exchange_chained, issue_subject_token, verify_exchanged_token
 
 
 def test_chained_exchange_over_http(client):
     subject_token = client.post("/token/subject", json={"principal": "user:rick"}).json()["subject_token"]
-    a17_cert = client.post("/identity/issue", json={"agent_id": "A17"}).json()["cert_pem"]
+    a17_cert = client.post(
+        "/identity/issue", json={"agent_id": "A17"}, headers=bootstrap_headers("A17")
+    ).json()["cert_pem"]
     hop1 = client.post(
         "/token/exchange",
         json={
@@ -15,7 +18,9 @@ def test_chained_exchange_over_http(client):
         },
     ).json()["access_token"]
 
-    b1_cert = client.post("/identity/issue", json={"agent_id": "B1"}).json()["cert_pem"]
+    b1_cert = client.post(
+        "/identity/issue", json={"agent_id": "B1"}, headers=bootstrap_headers("B1")
+    ).json()["cert_pem"]
     resp = client.post(
         "/token/exchange/chain",
         json={"parent_token": hop1, "sub_actor_cert_pem": b1_cert, "requested_actions": ["read"]},

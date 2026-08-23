@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import os
+import secrets
 import subprocess
 import sys
 import time
@@ -21,6 +22,11 @@ REPO_ROOT = DEMO_DIR.parent
 DB_PATH = DEMO_DIR / "demo.db"
 PORT = 8123
 BASE_URL = f"http://127.0.0.1:{PORT}"
+
+# Per-agent bootstrap secrets for this demo run only, generated fresh each run and handed to the
+# subprocess via WARRANT_BOOTSTRAP_TOKENS — /identity/issue requires one of these to mint an
+# identity for the corresponding agent_id.
+BOOTSTRAP_TOKENS = {"A17": secrets.token_hex(16), "B1": secrets.token_hex(16)}
 
 
 def seed(db_path: Path) -> None:
@@ -40,6 +46,7 @@ def seed(db_path: Path) -> None:
 def start_server() -> subprocess.Popen:
     env = os.environ.copy()
     env["WARRANT_DB_PATH"] = str(DB_PATH)
+    env["WARRANT_BOOTSTRAP_TOKENS"] = json.dumps(BOOTSTRAP_TOKENS)
     proc = subprocess.Popen(
         [sys.executable, "-m", "uvicorn", "warrant.main:app", "--port", str(PORT)],
         cwd=REPO_ROOT,
@@ -78,7 +85,7 @@ def main() -> None:
         subject_token = client.issue_subject_token("user:rick")
 
         print("=== Harness: Agent17 gets a SPIFFE-shaped identity ===")
-        a17 = client.issue_identity("A17")
+        a17 = client.issue_identity("A17", bootstrap_token=BOOTSTRAP_TOKENS["A17"])
         print(f"  {a17['spiffe_id']}")
 
         print("=== Harness: Rick delegates read+export on case:42 to Agent17 (RFC 8693 exchange) ===")
@@ -89,7 +96,7 @@ def main() -> None:
             requested_actions=["read", "export"],
         )
 
-        intake = make_intake_agent(client, intake_token)
+        intake = make_intake_agent(client, intake_token, BOOTSTRAP_TOKENS["B1"])
 
         print("\n=== Intake agent run 1 ===")
         result1 = intake(

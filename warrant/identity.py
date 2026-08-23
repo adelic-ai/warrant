@@ -3,9 +3,11 @@
 Not real SPIRE — deliberately, and disclosed as such in the README (see docs/build-prompt.md
 Phase 4). This issues short-lived X.509 certs whose SAN carries a `spiffe://<trust-domain>/...`
 URI, the same identity convention real SPIRE uses, signed by a local CA generated fresh at process
-start. What's missing relative to real SPIRE: node/workload attestation (this trusts whatever
-agent_id it's asked to issue for — a real deployment would attest the calling process before
-minting), a long-lived trust bundle (this CA is ephemeral, regenerated every run), and the
+start. What's missing relative to real SPIRE: node/workload attestation (minting is now gated on
+a pre-shared bootstrap token per agent_id — see `check_bootstrap_token` — rather than real SPIRE's
+platform-specific attestation plugins, e.g. verifying a k8s service account projection or an AWS
+instance identity document; a real deployment would attest what's actually running, not just check
+a shared secret), a long-lived trust bundle (this CA is ephemeral, regenerated every run), and the
 Workload API delivery mechanism (SPIRE's actual bootstrapping story). What's preserved: the
 identity primitive itself — URI-SAN-as-identity, short TTL, X.509 chain validation — is the real
 shape, not a placeholder string.
@@ -13,6 +15,9 @@ shape, not a placeholder string.
 from __future__ import annotations
 
 import datetime
+import json
+import os
+import secrets
 from dataclasses import dataclass
 
 from cryptography import x509
@@ -21,6 +26,33 @@ from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.x509.oid import NameOID
 
 TRUST_DOMAIN = "warrant.local"
+
+
+def _bootstrap_tokens() -> dict[str, str]:
+    """Operator-provisioned {agent_id: shared secret} map, read fresh from
+    WARRANT_BOOTSTRAP_TOKENS (a JSON object) on every call rather than cached at import — so
+    rotating it takes effect without a process restart, same freshness rule warden's own
+    reloadable-allowlist proxy follows for the identical reason (a cached value can silently
+    outlive a real change). This is the same join-token fallback real SPIRE itself offers when no
+    platform attestation plugin is configured for an environment: not attestation of what's
+    actually running, but it closes "anyone can mint an identity for any agent_id" down to "you
+    need the secret provisioned out-of-band for this specific agent_id."
+    """
+    raw = os.environ.get("WARRANT_BOOTSTRAP_TOKENS", "")
+    return json.loads(raw) if raw else {}
+
+
+def check_bootstrap_token(agent_id: str, token: str | None) -> bool:
+    """True iff `token` matches the provisioned secret for `agent_id`. Constant-time compare
+    (`secrets.compare_digest`) so a timing side-channel can't be used to guess a valid token
+    character-by-character. No token configured for this agent_id, or none presented -> False,
+    never an implicit allow."""
+    if token is None:
+        return False
+    expected = _bootstrap_tokens().get(agent_id)
+    if expected is None:
+        return False
+    return secrets.compare_digest(expected, token)
 
 
 def spiffe_id_for(agent_id: str) -> str:

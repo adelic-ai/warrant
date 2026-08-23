@@ -18,8 +18,14 @@ class WarrantClient:
         resp = self._raise_for_status(self.http.post("/token/subject", json={"principal": principal}))
         return resp.json()["subject_token"]
 
-    def issue_identity(self, agent_id: str) -> dict:
-        resp = self._raise_for_status(self.http.post("/identity/issue", json={"agent_id": agent_id}))
+    def issue_identity(self, agent_id: str, *, bootstrap_token: str) -> dict:
+        resp = self._raise_for_status(
+            self.http.post(
+                "/identity/issue",
+                json={"agent_id": agent_id},
+                headers={"X-Bootstrap-Token": bootstrap_token},
+            )
+        )
         return resp.json()  # {"spiffe_id", "cert_pem"}
 
     def exchange(self, *, subject_token: str, actor_cert_pem: str, case: str, requested_actions: list[str]) -> str:

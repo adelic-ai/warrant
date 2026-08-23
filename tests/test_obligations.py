@@ -1,3 +1,4 @@
+from tests.conftest import bootstrap_headers
 from warrant.gateway import handle
 from warrant.identity import CA
 from warrant.models import Decision
@@ -70,7 +71,9 @@ def test_cannot_discharge_the_same_obligation_twice(session):
 
 def test_approve_endpoint_over_http(client):
     subject_token = client.post("/token/subject", json={"principal": "user:rick"}).json()["subject_token"]
-    cert_pem = client.post("/identity/issue", json={"agent_id": "A17"}).json()["cert_pem"]
+    cert_pem = client.post(
+        "/identity/issue", json={"agent_id": "A17"}, headers=bootstrap_headers("A17")
+    ).json()["cert_pem"]
     access_token = client.post(
         "/token/exchange",
         json={

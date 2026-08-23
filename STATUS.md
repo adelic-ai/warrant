@@ -5,7 +5,7 @@ mode in the end — built directly in a normal Claude Code session instead, to a
 egress-allowlist/timeout friction discussed earlier in this thread. See `docs/build-prompt.md` for
 the original hands-off prompt this was based on (kept for transparency, not executed as written).
 
-## Done, real, tested (38/38 passing)
+## Done, real, tested (44/44 passing)
 
 - Identity/delegation/resource/obligation/audit models (SQLite via SQLModel).
 - PDP: real Cedar (`cedarpy`) as the permit/forbid substrate, with a disclosed pure-Python
@@ -28,16 +28,43 @@ the original hands-off prompt this was based on (kept for transparency, not exec
 
 ## Disclosed simplifications (see README's table for full detail)
 
-- SPIFFE identity is self-signed-CA-shaped, not real SPIRE (no attestation, no persistent trust
-  bundle).
+- SPIFFE identity is self-signed-CA-shaped, not real SPIRE (no persistent trust bundle). Caller
+  auth added 2026-08-23: `/identity/issue` requires a pre-shared per-agent bootstrap token
+  (`WARRANT_BOOTSTRAP_TOKENS`) — closes "any caller can mint an identity for any agent_id," but is
+  still not real platform attestation (verifying what's actually running).
 - SQLite, not Postgres.
-- Dockerfile is written but not build-verified (no local Docker daemon in this environment).
+- Dockerfile build-verified (2026-08-23, via colima): `docker build .` succeeds, container starts,
+  `/health` responds with real Cedar (`pdp_backend: cedar`).
 - `issue_subject_token` stands in for a real IdP; signing keys are ephemeral in-process (regenerated
   every process start, not persisted/KMS-backed).
 
 ## Explicitly out of scope (considered, not built)
 
-- Real SPIRE deployment.
+- **Real SPIRE deployment.** What's built today (2026-08-23) is a shared-secret stand-in — one
+  pre-provisioned bootstrap token per `agent_id`, checked with a constant-time string compare
+  (`warrant/identity.py:check_bootstrap_token`). That closes "any caller can mint an identity for
+  any agent_id" but is not attestation: it verifies the caller *holds a secret*, not that the
+  caller *is* the workload it claims to be. Real SPIRE would need, roughly in order of how much
+  new infrastructure each requires:
+  1. **Platform attestation plugins** — verifying a claim independently of anything the workload
+     itself asserts (a k8s service account projection checked against the k8s API server, an AWS
+     instance identity document checked against AWS, a TPM quote). A held secret can't do this in
+     principle: anything that steals the secret impersonates the workload perfectly, whereas
+     attestation checks a fact about the environment that isn't just data the workload carries.
+  2. **Node attestation as a prerequisite to workload attestation** — SPIRE attests the node the
+     agent daemon runs on first, then lets that agent vouch for workloads on it; a second, chained
+     trust problem, not a single check.
+  3. **A server + per-node agent architecture** — two long-running services to deploy and keep in
+     sync, not a library call in one process.
+  4. **Trust bundle distribution, rotation, and federation** — one bundle usable fleet-wide (and
+     across multiple SPIRE deployments for multi-cluster/multi-cloud), not one ephemeral CA in one
+     process.
+  5. **The Workload API** — a standard local gRPC socket other tooling (Envoy, Istio, ...) already
+     knows how to consume, vs. warrant's bespoke HTTP endpoint.
+
+  None of these are blocked on anything else here; picking this up would start with #1, since the
+  bootstrap-token layer already in place gives something to attest *in addition to*, not something
+  that needs to be ripped out first.
 - Joiner-mover-leaver automation.
 - Phase 8 — an LLM-assisted access-request triage feature. Not built: keeping the
   mandatory-approval-gate guarantee simple and structurally non-bypassable mattered more than the
@@ -65,7 +92,5 @@ record).
 - Push to GitHub — not done automatically; review locally first, then push when ready.
 - Do not post to LinkedIn or any social platform automatically — that step is manual, by the human,
   always (explicit boundary from the original build prompt, still holds).
-- Docker build has never actually been run — worth doing once before claiming it works in any
-  public-facing description.
 - The warden link in the README is a placeholder ("link TODO") — fill in once/if that repo is
   public.
