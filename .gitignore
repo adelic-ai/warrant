@@ -11,6 +11,6 @@ demo/demo.db
 build/
 dist/
 .DS_Store
-considerations/warden-agentwatch-enhance-warrant.md
+considerations/
 docs/design-notes.md
 docs/build-prompt.md
