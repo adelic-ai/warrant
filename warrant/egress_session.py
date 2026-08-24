@@ -21,7 +21,8 @@ from sqlmodel import Session, select
 
 from warrant import egress_verifier as ev
 from warrant import uid_pool
-from warrant.egress_proxy import ObservedConnect
+from warrant.db import ENGINE
+from warrant.egress_proxy import EgressProxy, ObservedConnect
 from warrant.models import EgressObservation, UidAllocation, utcnow
 
 #: The one legitimate egress destination for every token -- see module docstring. Configurable
@@ -124,3 +125,21 @@ def reconcile_egress(session: Session, *, warrant_host: str = GATEWAY_HOST) -> l
             )
 
     return violations
+
+
+def start_live_proxy(*, host: str = "127.0.0.1", port: int = 0) -> EgressProxy:
+    """Starts a real EgressProxy wired to persist every observation. `on_connect` fires from one
+    of the proxy's own per-connection threads (see egress_proxy.EgressProxy._handle), never from
+    a request-handling thread -- it opens its own short-lived Session against the shared ENGINE
+    per call rather than reusing any request's session, the same "each thread gets its own
+    Session object" shape test_multi_replica_signing.py already validated is safe against this
+    engine's connect_args (check_same_thread=False, db.py). The caller owns the returned proxy's
+    lifecycle -- stop it with proxy.stop()."""
+
+    def _on_connect(observed: ObservedConnect) -> None:
+        with Session(ENGINE) as session:
+            record_observation(session, observed)
+
+    proxy = EgressProxy(host=host, port=port, on_connect=_on_connect)
+    proxy.start()
+    return proxy

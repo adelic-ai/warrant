@@ -13,7 +13,7 @@ import urllib.request
 
 import pytest
 
-from warrant.egress_proxy import EgressProxy, ObservedConnect, _parse_connect_request
+from warrant.egress_proxy import EgressProxy, ObservedConnect, _parse_connect_request, resolve_connecting_uid
 
 linux_only = pytest.mark.skipif(sys.platform != "linux", reason="uid resolution reads /proc, Linux-only")
 
@@ -77,6 +77,13 @@ def test_relays_bytes_through_a_real_connect_tunnel():
     finally:
         proxy.stop()
         target.shutdown()
+
+
+def test_resolve_connecting_uid_returns_none_rather_than_crashing_with_no_proc():
+    """The actual regression this pins: on a host with no /proc at all (this Mac, right now --
+    not simulated), resolving a uid must return None per the function's own documented contract,
+    not raise. Runs everywhere, but only actually exercises the no-/proc branch on non-Linux."""
+    assert resolve_connecting_uid(65535) is None
 
 
 @linux_only

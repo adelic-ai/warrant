@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, Header, HTTPException
@@ -7,7 +8,7 @@ from sqlmodel import Session
 
 from warrant.audit import full_log, reconcile
 from warrant.db import get_session, init_db
-from warrant.egress_session import allocate_session_uid, reconcile_egress, release_session_uid
+from warrant.egress_session import allocate_session_uid, reconcile_egress, release_session_uid, start_live_proxy
 from warrant.gateway import GatewayError, handle as gateway_handle
 from warrant.identity import CA, check_bootstrap_token
 from warrant.obligations import ApprovalError, discharge
@@ -30,7 +31,7 @@ from warrant.schemas import (
     TokenExchangeResponse,
 )
 from warrant.tokens import ExchangeError, exchange, exchange_chained, issue_subject_token, verify_exchanged_token
-from warrant.uid_pool import username_for
+from warrant.uid_pool import ensure_nftables_rule, username_for
 
 
 def _bearer_token(authorization: str = Header(...)) -> str:
@@ -40,9 +41,24 @@ def _bearer_token(authorization: str = Header(...)) -> str:
 
 
 @asynccontextmanager
-async def _lifespan(_: FastAPI):
+async def _lifespan(app: FastAPI):
     init_db()
+    proxy = None
+    # Read fresh at startup, not cached at import time -- so a test (or a deployment's own env)
+    # setting this right before the app actually starts takes effect, rather than only whatever
+    # was set when this module first happened to be imported. Opt-in, off by default: every
+    # existing test (TestClient, no root, often not even Linux) keeps starting the app exactly as
+    # it did before this feature existed. Fails loudly rather than silently skipping enforcement
+    # if set without root/Linux -- never a downgrade nobody asked for.
+    enabled = os.environ.get("WARRANT_EGRESS_PROXY_ENABLED", "").strip().lower() in ("1", "true", "yes")
+    if enabled:
+        port = int(os.environ.get("WARRANT_EGRESS_PROXY_PORT", "18080"))
+        proxy = start_live_proxy(port=port)
+        ensure_nftables_rule(proxy.port)
+        app.state.egress_proxy = proxy
     yield
+    if proxy is not None:
+        proxy.stop()
 
 
 app = FastAPI(

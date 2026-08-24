@@ -47,7 +47,15 @@ def _read_uid_map() -> dict[int, int]:
     import os
     import re
 
-    for pid_dir in os.listdir("/proc"):
+    try:
+        proc_pids = os.listdir("/proc")
+    except OSError:
+        # No /proc at all (non-Linux) -- deliberate, not an accident of the outer handler's broad
+        # except OSError catching it: resolve_connecting_uid's docstring promises None, not a
+        # crash, when resolution isn't possible, and this is the one call in this function that
+        # wasn't already individually guarded that way.
+        return inode_to_uid
+    for pid_dir in proc_pids:
         if not pid_dir.isdigit():
             continue
         fd_dir = f"/proc/{pid_dir}/fd"
