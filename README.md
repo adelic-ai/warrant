@@ -123,7 +123,7 @@ Nothing here is silently faked — everything below is either fully real or expl
 ```
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
-pytest -q                              # 38 tests
+pytest -q                              # 57 tests
 uvicorn warrant.main:app --reload         # http://127.0.0.1:8000/docs
 ```
 
@@ -165,13 +165,23 @@ Real SPIRE (node/workload attestation, persistent trust bundle); joiner-mover-le
 an LLM-assisted access-request triage feature (considered — see `docs/build-prompt.md` Phase 8 —
 deliberately not built to keep the mandatory-approval-gate guarantee simple and load-bearing rather
 than adding a feature that has to be carefully kept from undermining it); anything in `warden`'s
-domain (sandboxing, egress control, runtime reconciliation).
+domain that's actually about *running* agents safely — sandboxing, egress enforcement, runtime
+containment. **Narrowed 2026-08-23** (see `STATUS.md` Phase 10): egress *observation* — a
+uid-tagged proxy log reconciled against this project's own authorization records, verifying rather
+than enforcing — is now in scope, since it's what makes `/audit/reconcile`'s own claim check
+something outside this project's own bookkeeping, the original design intent for that endpoint per
+`docs/build-prompt.md`.
 
 ## Tests
 
-38 tests across identity issuance/verification, token exchange (happy path, scope-widen rejection,
-forged-actor rejection, chained delegation with nested `act` claims), the PDP (all three canonical
-decisions, Cedar backend confirmation), the gateway (credential-injection proof, token-scope vs.
-delegation-scope distinction), obligation discharge (self-approval rejection, wrong-approver
-rejection, double-discharge rejection, full discharge-then-completion flow), defeater provenance,
-and audit reconciliation (including a manufactured backdated-approval violation). Run with `pytest -q`.
+57 tests across identity issuance/verification, token exchange (happy path, scope-widen rejection,
+forged-actor rejection, chained delegation with nested `act` claims, over HTTP via
+`/token/exchange/chain`), the PDP (all three canonical decisions, Cedar backend confirmation), the
+gateway (credential-injection proof, token-scope vs. delegation-scope distinction), obligation
+discharge (self-approval rejection, wrong-approver rejection, double-discharge rejection, full
+discharge-then-completion flow), defeater provenance, audit reconciliation (including a manufactured
+backdated-approval violation) and the full audit log (`GET /audit/log`), the shared keystore and a
+real multi-process signing test (two separate `subprocess.run` processes, not mocked, proving a
+second replica can verify the first's tokens), and the egress-verifier reconciliation logic
+(structural uid → token → authorized-host correlation — see `STATUS.md` Phase 10). Run with
+`pytest -q`.

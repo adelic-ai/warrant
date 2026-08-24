@@ -76,8 +76,12 @@ the original hands-off prompt this was based on (kept for transparency, not exec
   mandatory-approval-gate guarantee simple and structurally non-bypassable mattered more than the
   feature, and adding it would mean carefully re-proving that guarantee still holds with an LLM
   proposing scope changes in the loop.
-- Everything in `warden`'s domain: sandboxing, egress control, prompt-injection defense, runtime
-  process/network reconciliation.
+- Everything in `warden`'s domain: sandboxing, prompt-injection defense, egress *enforcement*
+  (blocking/allowlisting traffic) — genuinely "running agents safely," not this project's job.
+  **Narrowed 2026-08-23** (see Phase 10 below): egress *observation*, in service of making
+  `/audit/reconcile`'s own claim actually check something external, is now in scope. It doesn't
+  block anything; it exists only to verify a decision this project already made, same category as
+  the existing `/audit/reconcile`, not a new containment feature.
 
 ## Phase 9 — built (not skipped after all)
 
@@ -92,6 +96,38 @@ Also added along the way, not in the original phase plan: `POST /token/exchange/
 chained-exchange function existed only in-process before this — the demo needed it over HTTP) and
 `GET /audit/log` (a read-only full trail, needed to pair the agent transcript with warrant's own
 record).
+
+## Phase 10 — the egress verifier: closing Phase 7's own unfulfilled promise
+
+`docs/build-prompt.md`'s design intent for `/audit/reconcile` was explicit: *"building on [Roblox's]
+published admission [that] nothing reconciles [self-reported telemetry] against unforgeable ground
+truth... this is the concrete, working version of 'don't trust self-report.'"* What Phase 7 actually
+specified and what got built only checks internal timestamp ordering within warrant's own tables
+(does completion precede discharge) — self-consistency, not anything external. Roblox's own admitted
+gap was never actually closed; it was narrowed to a smaller version of the same shape.
+
+**Scope call, made explicitly per the build prompt's own rule** ("make the most reasonable call,
+note it in STATUS.md, and keep moving"): building the piece that actually reaches outside warrant's
+own process to check a claim — did the agent's actual network egress match what warrant authorized —
+is finishing that original promise, not new scope. See `considerations/warden-agentwatch-enhance-warrant.md`
+for the full design reasoning, including the Black Hat 2026 "Trusted Enough to Run" (Elad Meged)
+trust-handoff audit method this design is built against, and the honest case for reading it the
+*other* way (that "egress" is named explicitly enough in the original boundary that this is scope
+creep regardless of purpose) — recorded there, not hidden.
+
+**What's in scope, precisely, and what stays out:** *observing* egress (a uid-tagged proxy log,
+reconciled against warrant's own authorization records) is in scope as of this decision. *Enforcing*
+egress (blocking, allowlisting) stays out — that's still "running agents safely," warden's job, not
+this project's. The `nftables` rule this needs is there only to guarantee the proxy sees all traffic
+so its log is complete, not to block anything the proxy doesn't like.
+
+- `warrant/egress_verifier.py` — the reconciliation/join logic (uid → token allocation → authorized
+  hosts), pure Python, no OS dependency, tested (7 tests: authorized/unauthorized/orphan-uid/
+  time-window/overlapping-allocation cases).
+- OS-level piece (ephemeral per-session uids from a static reserved range, one `nftables` rule, the
+  proxy's own peer-credential capture) — in progress, validated for real against colima (a real
+  Linux VM, not a fake), not on the Mac itself (Darwin has no `nftables`, and macOS's socket
+  peer-credential API differs from Linux's `SO_PEERCRED`).
 
 ## Remaining manual steps
 
