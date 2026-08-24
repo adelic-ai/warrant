@@ -12,3 +12,5 @@ build/
 dist/
 .DS_Store
 considerations/warden-agentwatch-enhance-warrant.md
+docs/design-notes.md
+docs/build-prompt.md
