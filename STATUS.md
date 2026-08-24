@@ -136,11 +136,25 @@ so its log is complete, not to block anything the proxy doesn't like.
   not asserted from rule text — and the proxy resolved a real connecting process's real uid over a
   real CONNECT tunnel relaying real bytes. 67 tests pass as root on real Linux (0 skipped); 62 pass
   on the Mac with the Linux/root-only ones correctly skipped, not faked.
-- **Not yet done:** wiring the proxy's live output into `warrant/egress_verifier.py`'s `reconcile()`
-  (currently fed by hand-built `ProxyLogEntry`/`UidAllocation` data in tests, not the proxy's own
-  `ObservedConnect` stream), and issuing a uid allocation per session/token at the point warrant
-  actually mints one. The three pieces exist and are each independently proven; they are not yet
-  wired into one live path.
+- `warrant/egress_session.py` — wires all three pieces into one live path. `UidAllocation` and
+  `EgressObservation` now persist to the DB (`models.py`), not just hand-built test data.
+  `authorized_hosts` is not a per-token set derived from the Delegation model — warrant's own
+  credential-injection gateway pattern (`gateway.py`) means the agent should never reach a
+  downstream resource directly at all, so the *one* legitimate destination for every token is
+  warrant's own gateway host, a single constant. Any other egress is a bypass by construction of
+  the PEP pattern, not by a permission list that could be wrong or stale. **Built and validated for
+  real** on colima as root: 75 tests pass, 0 skipped, including a real
+  `allocate_session_uid` → real `useradd` → real DB row → real `release_session_uid` → real
+  `userdel` round trip. 68 pass on the Mac with the 7 Linux/root-only ones correctly skipped.
+- **Not yet done:** `warrant/tokens.py`'s `exchange()` doesn't yet call `allocate_session_uid` at
+  mint time (so a real token has no uid a launcher could actually run the agent process as); no
+  running `EgressProxy` instance is yet wired to call `record_observation` against a live DB
+  session (the proxy and the persistence layer are each proven, not yet connected to each other in
+  a running process); no HTTP endpoint exposes `reconcile_egress` the way `/audit/reconcile`
+  exposes the obligation-discharge reconciliation; and `demo/agents.py`'s Strands agent isn't
+  launched under an allocated uid or pointed at the proxy — the demo still runs exactly as it did
+  before this phase. Each of these is a real, scoped, remaining step, not a hidden gap in what's
+  already claimed above.
 
 ## Remaining manual steps
 
