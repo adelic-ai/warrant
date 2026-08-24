@@ -178,6 +178,67 @@ so its log is complete, not to block anything the proxy doesn't like.
   same-uid) work wouldn't even correspond to each other. Complete where completeness matters: real
   capability, real tests, real validation on real Linux — not demo theater.
 
+## A further direction, not built — the same-process attribution gap, and "siphonophore"
+
+Found reasoning through Phase 10, not before: uid-based attribution silently assumes one uid per
+session, but Strands' actual delegation model doesn't give you that. `demo/agents.py`'s
+`delegate_to_subagent` mints a real, separately-scoped second-hop token
+(`client.exchange_chained`) for the sub-agent, then just constructs a new `Agent` object and calls
+it — `summarizer(...)` is a plain Python function call, not a new process. No `fork`, no
+`subprocess.Popen`, nothing. The parent and every delegated sub-agent share one pid *and* one uid,
+because they never leave the one OS process the harness is running in. So even with everything in
+Phase 10 fully wired, a real deployment with active delegation chains would still have no way to
+tell, from the proxy's own observations, which of several concurrently-running agents inside one
+process made a given call — they're indistinguishable at the OS level as things stand today.
+
+**What it would take to actually fix, sketched, not built:**
+
+1. **Provision the process at delegation time, not organically.** A pid isn't earned by an agent
+   doing something — it's assigned the instant a process is spawned, before it runs any code at
+   all. So `delegate_to_subagent` should spawn the sub-agent's process immediately after
+   `exchange_chained` mints its token, *before* handing it any real work — the same "provision the
+   identity first, then hand off the work" shape `allocate_session_uid`/`/egress/allocate` already
+   use for uid. Right now nothing spawns anything, which is *why* there's no pid worth having an
+   opinion about yet.
+2. **Require a real, proxied check-in before that identity is trusted for anything** — not a
+   benign no-op, an actual first network call through the proxy. This is closer to Kerberos than
+   to a self-reported flag: neither warrant alone (which only knows the token it minted) nor the
+   spawned process alone (which only knows its own token) can produce the pairing "this pid/uid
+   really is this token" — it takes putting the two together, one half held by warrant, one half
+   observed independently by the proxy at the OS level, the same way a Kerberos ticket only
+   verifies when both sides' independently-held pieces agree. A process that never checks in this
+   way is exactly as untrusted as one that was never provisioned at all.
+3. **Prefer a cgroup over a bare pid for tracking a whole descendant subtree, and this isn't a new
+   idea for this codebase's own author — it's the same fix warden/agentwatch already reached for.**
+   A pid identifies one process; it says nothing about that process's own children if a sub-agent's
+   tool later forks or execs further work. warden's own `reconcile_ebpf_live` docstring
+   (`warden/report.py`) already describes exactly this: *"the session cgroup self-seeds from the
+   runtime's own exec in the capture stream... so no cgroup argument is needed for the basic
+   path."* And the reason cgroups matter there is the same fork-gap warden's own `DECISIONS.md`
+   names directly — *"the capture plane ships fork-gap-blind"* — because exec-only observation
+   (auditd) can't see a process that forks without ever exec'ing, so its whole subtree falls out of
+   scope. A cgroup, unlike a pid, is assigned once to a whole process tree and the kernel tracks
+   membership persistently across that entire tree, including descendants that fork later without
+   exec'ing — closing exactly the gap a bare pid (or agentwatch's own ancestry-walk, which has the
+   identical fork-gap blindness) can't. For warrant's own shape, this would likely mean: keep the
+   *broad*, coarse uid range for `nftables` enforcement (it doesn't need per-agent granularity —
+   the whole family of session-launched processes reaching only the proxy is the actual boundary
+   that matters), and use a cgroup per delegated agent as the *fine-grained* attribution key once
+   traffic reaches the proxy — cheaper to provision than a fresh OS user per agent (no `useradd`
+   needed, just a cgroup), and robust to a sub-agent's own tool later forking work the way a pid
+   alone would not be.
+
+**Named "siphonophore" for the bigger version of this, not scoped for this project:** Strands'
+own model is one body (one process) with many tentacles (tool functions) — including delegation to
+a sub-agent, which is *also* just another tentacle, not a new body. A siphonophore, biologically,
+is the opposite: a colony of individually-complete zooids, each with its own real boundary,
+coordinated but never fused into one shared body. A framework where every agent — including every
+delegated sub-agent, at arbitrary depth — is its own real OS process by construction, coordinated
+through message-passing rather than in-process calls, would make OS-level ground truth (uid,
+cgroup, or otherwise) precise no matter how deep a delegation chain goes, rather than correct only
+at the top level the way today's design is. That's a different framework, not a fix to this one —
+worth a real, separately-scoped pass, not something to fold into this project's own timeline.
+
 ## Remaining manual steps
 
 - Push to GitHub — not done automatically; review locally first, then push when ready.
