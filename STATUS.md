@@ -124,10 +124,23 @@ so its log is complete, not to block anything the proxy doesn't like.
 - `warrant/egress_verifier.py` — the reconciliation/join logic (uid → token allocation → authorized
   hosts), pure Python, no OS dependency, tested (7 tests: authorized/unauthorized/orphan-uid/
   time-window/overlapping-allocation cases).
-- OS-level piece (ephemeral per-session uids from a static reserved range, one `nftables` rule, the
-  proxy's own peer-credential capture) — in progress, validated for real against colima (a real
-  Linux VM, not a fake), not on the Mac itself (Darwin has no `nftables`, and macOS's socket
-  peer-credential API differs from Linux's `SO_PEERCRED`).
+- `warrant/uid_pool.py` — ephemeral per-session OS users from a static, pre-reserved uid range
+  (58000–58899), one idempotent `nftables` rule scoping the whole range to the proxy port only.
+  `warrant/egress_proxy.py` — a CONNECT-only forward proxy resolving the connecting uid via
+  `/proc/net/tcp` → inode → `/proc/<pid>/status` (what `ss`/`lsof` do), not a Unix socket, so it
+  stays usable by any standard HTTP client via `http_proxy`/`https_proxy`. **Built and validated
+  for real** against colima (a real Linux VM, not a fake — Darwin has no `nftables`, and macOS's
+  socket peer-credential API differs from Linux's `SO_PEERCRED`): as root, a real allocated session
+  uid was proven to reach the proxy port and *nothing else* — a real subprocess run as that uid
+  attempting a direct connection to an arbitrary external host was actually refused by the kernel,
+  not asserted from rule text — and the proxy resolved a real connecting process's real uid over a
+  real CONNECT tunnel relaying real bytes. 67 tests pass as root on real Linux (0 skipped); 62 pass
+  on the Mac with the Linux/root-only ones correctly skipped, not faked.
+- **Not yet done:** wiring the proxy's live output into `warrant/egress_verifier.py`'s `reconcile()`
+  (currently fed by hand-built `ProxyLogEntry`/`UidAllocation` data in tests, not the proxy's own
+  `ObservedConnect` stream), and issuing a uid allocation per session/token at the point warrant
+  actually mints one. The three pieces exist and are each independently proven; they are not yet
+  wired into one live path.
 
 ## Remaining manual steps
 
