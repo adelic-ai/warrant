@@ -87,7 +87,7 @@ Nothing here is silently faked — everything below is either fully real or expl
 | Delegation | **Real RFC 8693 token exchange** — `act` claim (delegation, not impersonation), scope narrowed to the intersection of what the Delegation grants, enforced at mint time. Chained delegation (agent → sub-agent) is implemented and tested, with the `act` claim nesting and scope non-increase enforced against the parent token's own scope at every hop. |
 | PEP / gateway | Real — an MCP-shaped gateway that validates the token's *own* scope (not just the underlying delegation), calls the PDP, and performs credential injection: the downstream secret is fetched server-side and the caller never sees it (proven by test, not just asserted). |
 | The three deontic seams | All real and tested: obligation discharge as first-class state (a distinct `/approve` call, by the principal only, never the agent, checked against a real `Obligation` row — not a trusted flag); defeater provenance (every non-default-deny decision surfaces who granted the delegation, why, and when it was reviewed); scope non-increase across a real chained delegation. |
-| Audit / reconciliation | Real. `/audit/reconcile` flags any action-completion whose timestamp predates the obligation it claims to rest on — tested against a manufactured backdated-approval scenario, not just the happy path. |
+| Audit / reconciliation | Real, two independent checks. `/audit/reconcile` flags any action-completion whose timestamp predates the obligation it claims to rest on — tested against a manufactured backdated-approval scenario, not just the happy path. `/audit/reconcile/egress` (see `STATUS.md` Phase 10) is a second, independent check against real OS-level ground truth rather than warrant's own bookkeeping: an ephemeral OS user per session, a kernel-enforced `nftables` rule, and a uid-tagged CONNECT proxy — validated for real on a real Linux host (colima), not simulated, including proving a real allocated session uid genuinely cannot reach anywhere but warrant's own gateway. Not yet wired into the live demo path (see `STATUS.md`). |
 | Storage | SQLite, not Postgres — a deliberate simplification for build velocity, not what an early design note assumed. Trivial to swap for a real deployment. |
 | Docker | Verified — `docker build .` succeeds, the container starts, and `/health` responds `{"status":"ok","pdp_backend":"cedar"}` (real Cedar, not the fallback) inside the container. |
 
@@ -123,7 +123,7 @@ Nothing here is silently faked — everything below is either fully real or expl
 ```
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
-pytest -q                              # 57 tests
+pytest -q                              # 71 tests (79 on real Linux as root -- see below)
 uvicorn warrant.main:app --reload         # http://127.0.0.1:8000/docs
 ```
 
@@ -146,6 +146,9 @@ docker run -p 8000:8000 warrant
 | `POST /gateway/documents/{id}/export` | PEP-mediated export — REQUIRE_APPROVAL until discharged. |
 | `POST /approve` | Discharge an obligation — principal only, never the triggering agent. |
 | `GET /audit/reconcile` | Flags any completion that predates its own obligation's discharge. |
+| `POST /egress/allocate` | Provisions a real ephemeral OS user for a token's work window (see `STATUS.md` Phase 10 — the egress verifier). |
+| `POST /egress/release` | Tears down that OS user when the session ends. |
+| `GET /audit/reconcile/egress` | Flags any observed network egress that didn't reach warrant's own gateway host — an independent check against real OS-level ground truth, not warrant's own bookkeeping. |
 | `GET /health` | Liveness + which PDP backend is actually active. |
 
 ## Demo — a real Strands-orchestrated run, not a synthetic test
@@ -174,14 +177,17 @@ something outside this project's own bookkeeping, the original design intent for
 
 ## Tests
 
-57 tests across identity issuance/verification, token exchange (happy path, scope-widen rejection,
-forged-actor rejection, chained delegation with nested `act` claims, over HTTP via
-`/token/exchange/chain`), the PDP (all three canonical decisions, Cedar backend confirmation), the
-gateway (credential-injection proof, token-scope vs. delegation-scope distinction), obligation
-discharge (self-approval rejection, wrong-approver rejection, double-discharge rejection, full
-discharge-then-completion flow), defeater provenance, audit reconciliation (including a manufactured
-backdated-approval violation) and the full audit log (`GET /audit/log`), the shared keystore and a
-real multi-process signing test (two separate `subprocess.run` processes, not mocked, proving a
-second replica can verify the first's tokens), and the egress-verifier reconciliation logic
-(structural uid → token → authorized-host correlation — see `STATUS.md` Phase 10). Run with
-`pytest -q`.
+71 tests on the Mac (79 as root on a real Linux host — see below) across identity
+issuance/verification, token exchange (happy path, scope-widen rejection, forged-actor rejection,
+chained delegation with nested `act` claims, over HTTP via `/token/exchange/chain`), the PDP (all
+three canonical decisions, Cedar backend confirmation), the gateway (credential-injection proof,
+token-scope vs. delegation-scope distinction), obligation discharge (self-approval rejection,
+wrong-approver rejection, double-discharge rejection, full discharge-then-completion flow), defeater
+provenance, audit reconciliation (including a manufactured backdated-approval violation) and the
+full audit log (`GET /audit/log`), the shared keystore and a real multi-process signing test (two
+separate `subprocess.run` processes, not mocked, proving a second replica can verify the first's
+tokens), and the egress verifier: the reconciliation logic (structural uid → token →
+authorized-host correlation, runs everywhere), the CONNECT proxy and its real-uid resolution (Linux
+only), and the OS-level enforcement — ephemeral uid provisioning, the `nftables` rule, and the
+`/egress/allocate`/`/egress/release` HTTP endpoints (Linux + root only, +8 tests skipped elsewhere,
+not faked — see `STATUS.md` Phase 10). Run with `pytest -q`.

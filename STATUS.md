@@ -146,15 +146,24 @@ so its log is complete, not to block anything the proxy doesn't like.
   real** on colima as root: 75 tests pass, 0 skipped, including a real
   `allocate_session_uid` → real `useradd` → real DB row → real `release_session_uid` → real
   `userdel` round trip. 68 pass on the Mac with the 7 Linux/root-only ones correctly skipped.
-- **Not yet done:** `warrant/tokens.py`'s `exchange()` doesn't yet call `allocate_session_uid` at
-  mint time (so a real token has no uid a launcher could actually run the agent process as); no
-  running `EgressProxy` instance is yet wired to call `record_observation` against a live DB
-  session (the proxy and the persistence layer are each proven, not yet connected to each other in
-  a running process); no HTTP endpoint exposes `reconcile_egress` the way `/audit/reconcile`
-  exposes the obligation-discharge reconciliation; and `demo/agents.py`'s Strands agent isn't
-  launched under an allocated uid or pointed at the proxy — the demo still runs exactly as it did
-  before this phase. Each of these is a real, scoped, remaining step, not a hidden gap in what's
-  already claimed above.
+- `POST /egress/allocate`, `POST /egress/release`, `GET /audit/reconcile/egress` — HTTP endpoints,
+  keyed off the access token's own server-verified `jti` (via `verify_exchanged_token`, never a
+  client-supplied session id). `exchange()`/`exchange_chained()` deliberately NOT changed to
+  auto-allocate a uid — that would make every existing token-exchange test (dozens, cross-platform)
+  attempt a real `useradd`; allocation stays an explicit step for whoever's about to actually
+  launch an agent process under observation. `/audit/reconcile/egress` is a separate endpoint from
+  `/audit/reconcile` on purpose — obligation-discharge timing and independently-observed egress are
+  different kinds of check, and merging them into one violations list would lose that distinction.
+  **Built and validated for real** on colima as root: 79 tests pass, 0 skipped, including the full
+  HTTP flow — subject token, identity issue, token exchange, real `/egress/allocate` (real
+  `useradd`), real `/egress/release` (real `userdel`). 71 pass on the Mac with the 8 Linux/root-only
+  ones correctly skipped.
+- **Not yet done:** no running `EgressProxy` instance is yet started as part of the app itself and
+  wired to call `record_observation` against a live DB session — the proxy and the persistence
+  layer are each proven independently, not yet connected to each other in a running process; and
+  `demo/agents.py`'s Strands agent isn't launched under an allocated uid or pointed at the proxy —
+  the demo still runs exactly as it did before this phase. Each of these is a real, scoped,
+  remaining step, not a hidden gap in what's already claimed above.
 
 ## Remaining manual steps
 
