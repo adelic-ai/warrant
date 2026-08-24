@@ -25,6 +25,8 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.x509.oid import NameOID
 
+from warrant.keystore import load_or_create_ec_key
+
 TRUST_DOMAIN = "warrant.local"
 
 
@@ -68,11 +70,25 @@ class Svid:
 
 
 class LocalCA:
-    """Stands in for SPIRE's server CA. One instance per process — the trust bundle a real
-    deployment would persist and distribute is, here, just this object's public cert."""
+    """Stands in for SPIRE's server CA.
 
-    def __init__(self) -> None:
-        self._key = ec.generate_private_key(ec.SECP256R1())
+    Pass `key` to make multiple LocalCA instances (e.g. one per horizontally-scaled replica)
+    verify each other's SVIDs: `verify()` checks a leaf cert's signature against
+    `self._key`'s public key, which is fully determined by the key alone, so replicas sharing
+    a key interoperate even though each still builds its own `self._cert` at construction time
+    (different serial number, different not-before/not-after — both derived from `datetime.
+    now()` at that replica's own startup). That's a deliberate simplification: nothing in this
+    codebase compares `cert_pem` bytes against a previously-fetched trust bundle, only does
+    live cryptographic verification, so cert-metadata consistency across replicas isn't a
+    correctness requirement today. A deployment that needed byte-identical CA certs across
+    replicas (e.g. an external client pinning the trust bundle's exact bytes) would need to
+    persist the cert too, not just the key — not built, since nothing here needs it yet.
+    With no key passed (the default), behaves exactly as before: a fresh, unshared,
+    process-local CA — this is what tests use to get two provably-independent CAs.
+    """
+
+    def __init__(self, key: ec.EllipticCurvePrivateKey | None = None) -> None:
+        self._key = key or ec.generate_private_key(ec.SECP256R1())
         subject = issuer = x509.Name(
             [x509.NameAttribute(NameOID.COMMON_NAME, f"warrant-local-ca.{TRUST_DOMAIN}")]
         )
@@ -149,5 +165,8 @@ class LocalCA:
             return None
 
 
-# One CA per process — see class docstring. Imported and used as a singleton throughout.
-CA = LocalCA()
+# One CA per process by default (see class docstring) — unless WARRANT_CA_KEY_PATH points every
+# replica at the same shared key file, in which case they all verify each other's SVIDs.
+# Imported and used as a singleton throughout.
+_CA_KEY_PATH = os.environ.get("WARRANT_CA_KEY_PATH")
+CA = LocalCA(load_or_create_ec_key(_CA_KEY_PATH) if _CA_KEY_PATH else None)

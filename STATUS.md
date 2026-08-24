@@ -35,8 +35,14 @@ the original hands-off prompt this was based on (kept for transparency, not exec
 - SQLite, not Postgres.
 - Dockerfile build-verified (2026-08-23, via colima): `docker build .` succeeds, container starts,
   `/health` responds with real Cedar (`pdp_backend: cedar`).
-- `issue_subject_token` stands in for a real IdP; signing keys are ephemeral in-process (regenerated
-  every process start, not persisted/KMS-backed).
+- `issue_subject_token` stands in for a real IdP; signing keys are ephemeral in-process by default
+  (regenerated every process start, not persisted/KMS-backed) — which is a real bug, not just a
+  simplification, the moment a second replica exists: each would sign with a different key, so no
+  replica could verify another's tokens. Fixed 2026-08-23 (`warrant/keystore.py`,
+  `WARRANT_SIGNING_KEY_PATH` / `WARRANT_CA_KEY_PATH`, opt-in): a shared key file, loaded once and
+  race-safe across concurrent first-boot. Proven with a real multi-process test (two separate
+  `subprocess.run` Python processes, not mocked) — `tests/test_multi_replica_signing.py`. Still not
+  KMS-backed; a real deployment would put a KMS/Vault behind the same load-or-create contract.
 
 ## Explicitly out of scope (considered, not built)
 
