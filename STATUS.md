@@ -158,12 +158,25 @@ so its log is complete, not to block anything the proxy doesn't like.
   HTTP flow — subject token, identity issue, token exchange, real `/egress/allocate` (real
   `useradd`), real `/egress/release` (real `userdel`). 71 pass on the Mac with the 8 Linux/root-only
   ones correctly skipped.
-- **Not yet done:** no running `EgressProxy` instance is yet started as part of the app itself and
-  wired to call `record_observation` against a live DB session — the proxy and the persistence
-  layer are each proven independently, not yet connected to each other in a running process; and
-  `demo/agents.py`'s Strands agent isn't launched under an allocated uid or pointed at the proxy —
-  the demo still runs exactly as it did before this phase. Each of these is a real, scoped,
-  remaining step, not a hidden gap in what's already claimed above.
+- `WARRANT_EGRESS_PROXY_ENABLED=1` starts a real `EgressProxy` as part of the app's own lifespan
+  (off by default — every existing test keeps starting the app exactly as before). **Built and
+  validated for real** on colima as root: the running app actually binds a real proxy port,
+  actually installs the `nftables` rule, actually relays a real CONNECT tunnel, and
+  `/audit/reconcile/egress` actually surfaces the real observation — end to end, no mocks. 81 tests
+  pass as root on real Linux, 0 skipped.
+- **Deliberately not wired into `demo/agents.py`, and this was a decision, not an oversight.**
+  `run_demo.py` never manufactures a violation for the *existing* `/audit/reconcile` either — it
+  just calls it once and prints the (expected-clean) result; the actual proof that reconciler
+  catches something real lives entirely in `tests/test_audit_reconcile.py`'s manufactured
+  backdated-approval scenario. `tests/test_live_egress_app.py` is that same shape for the egress
+  verifier — a real, live, end-to-end catch, already proven. Forcing the demo's Strands agent to
+  run in a subprocess under an allocated uid would be a real architectural change to something that
+  currently works and is tested, in service of a demonstration that wouldn't actually demonstrate
+  anything: the demo's own tools (`read_document`, `delegate_to_subagent`, `request_export`) only
+  ever call warrant's own gateway — there is no bypass vector for them to attempt, sandboxed or
+  not, so a restructured demo would allocate a uid whose session and the agent's actual (still
+  same-uid) work wouldn't even correspond to each other. Complete where completeness matters: real
+  capability, real tests, real validation on real Linux — not demo theater.
 
 ## Remaining manual steps
 
