@@ -14,6 +14,7 @@ pattern itself, not by a permission list that could be wrong or stale.
 """
 from __future__ import annotations
 
+import os
 from typing import Optional
 
 from sqlmodel import Session, select
@@ -22,6 +23,11 @@ from warrant import egress_verifier as ev
 from warrant import uid_pool
 from warrant.egress_proxy import ObservedConnect
 from warrant.models import EgressObservation, UidAllocation, utcnow
+
+#: The one legitimate egress destination for every token -- see module docstring. Configurable
+#: because "warrant's own host" is a deployment fact, not something this module should hardcode;
+#: same env-var-configurable-with-a-sensible-default shape as WARRANT_DB_PATH (db.py).
+GATEWAY_HOST = os.environ.get("WARRANT_GATEWAY_HOST", "warrant.local")
 
 
 def allocate_session_uid(session: Session, *, token_jti: str) -> int:
@@ -64,7 +70,7 @@ def record_observation(session: Session, observed: ObservedConnect) -> None:
     session.commit()
 
 
-def reconcile_egress(session: Session, *, warrant_host: str) -> list[dict]:
+def reconcile_egress(session: Session, *, warrant_host: str = GATEWAY_HOST) -> list[dict]:
     """The live version of egress_verifier.reconcile(): pulls persisted observations and
     allocations, and reconciles against the one-and-only authorized destination (warrant's own
     gateway host -- see module docstring), returning only the CONFIRMED (unauthorized) entries, in

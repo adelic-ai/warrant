@@ -7,6 +7,7 @@ from sqlmodel import Session
 
 from warrant.audit import full_log, reconcile
 from warrant.db import get_session, init_db
+from warrant.egress_session import allocate_session_uid, reconcile_egress, release_session_uid
 from warrant.gateway import GatewayError, handle as gateway_handle
 from warrant.identity import CA, check_bootstrap_token
 from warrant.obligations import ApprovalError, discharge
@@ -17,6 +18,9 @@ from warrant.schemas import (
     AuthorizeRequest,
     AuthorizeResponse,
     ChainedExchangeRequest,
+    EgressAllocateRequest,
+    EgressAllocateResponse,
+    EgressReleaseRequest,
     GatewayResponse,
     IssueIdentityRequest,
     IssueIdentityResponse,
@@ -25,7 +29,8 @@ from warrant.schemas import (
     TokenExchangeRequest,
     TokenExchangeResponse,
 )
-from warrant.tokens import ExchangeError, exchange, exchange_chained, issue_subject_token
+from warrant.tokens import ExchangeError, exchange, exchange_chained, issue_subject_token, verify_exchanged_token
+from warrant.uid_pool import username_for
 
 
 def _bearer_token(authorization: str = Header(...)) -> str:
@@ -140,6 +145,42 @@ def audit_log(session: Session = Depends(get_session)) -> list[dict]:
 def audit_reconcile(session: Session = Depends(get_session)) -> dict:
     violations = reconcile(session)
     return {"violations": violations, "clean": len(violations) == 0}
+
+
+@app.get("/audit/reconcile/egress")
+def audit_reconcile_egress(session: Session = Depends(get_session)) -> dict:
+    """Kept as a separate endpoint from /audit/reconcile rather than merged into it: these are two
+    different kinds of check (obligation-discharge timing vs. independently-observed network
+    egress), and combining them into one violations list would lose that distinction the same way
+    a single combined 'deviation' number would (see the considerations doc's own citation of
+    agentwatch's CONFIRMED/GAP/NONE staying separate on purpose)."""
+    violations = reconcile_egress(session)
+    return {"violations": violations, "clean": len(violations) == 0}
+
+
+@app.post("/egress/allocate", response_model=EgressAllocateResponse)
+def egress_allocate(
+    req: EgressAllocateRequest, session: Session = Depends(get_session)
+) -> EgressAllocateResponse:
+    """Provisions a real ephemeral OS user for this token's work window. The caller — whoever is
+    about to actually launch the agent process this token authorizes — uses the returned uid/
+    username to run that process as; this endpoint does not launch anything itself."""
+    try:
+        claims = verify_exchanged_token(req.access_token)
+    except ExchangeError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    uid = allocate_session_uid(session, token_jti=claims["jti"])
+    return EgressAllocateResponse(uid=uid, username=username_for(uid))
+
+
+@app.post("/egress/release")
+def egress_release(req: EgressReleaseRequest, session: Session = Depends(get_session)) -> dict:
+    try:
+        claims = verify_exchanged_token(req.access_token)
+    except ExchangeError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    release_session_uid(session, token_jti=claims["jti"])
+    return {"released": True}
 
 
 @app.post("/approve", response_model=ApproveResponse)

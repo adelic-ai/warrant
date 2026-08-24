@@ -80,3 +80,16 @@ class GatewayResponse(BaseModel):
     reason: str
     obligation_id: Optional[str] = None
     content: Optional[str] = None
+
+
+class EgressAllocateRequest(BaseModel):
+    access_token: str
+
+
+class EgressAllocateResponse(BaseModel):
+    uid: int
+    username: str
+
+
+class EgressReleaseRequest(BaseModel):
+    access_token: str
