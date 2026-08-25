@@ -107,6 +107,32 @@ class Obligation(SQLModel, table=True):
     discharged_at: Optional[datetime] = None
 
 
+class UidAllocation(SQLModel, table=True):
+    """Which OS uid a token's own egress-verifier session was allocated, and for how long.
+    `token_jti` is the minted token's own `jti` claim (tokens.exchange) -- the join key back to
+    "which delegation/session does this uid's observed egress belong to." `released_at=None`
+    means still held; egress_verifier.UidAllocation.covers() (the pure-logic module) is what
+    actually enforces the time window when reconciling, this table just persists the fact."""
+
+    id: str = Field(default_factory=lambda: _uuid("uidalloc"), primary_key=True)
+    token_jti: str = Field(index=True)
+    uid: int
+    allocated_at: datetime = Field(default_factory=utcnow)
+    released_at: Optional[datetime] = None
+
+
+class EgressObservation(SQLModel, table=True):
+    """One CONNECT the egress proxy actually observed -- persisted ground truth, not warrant's
+    own claim about what should have happened. `uid` is None when the proxy couldn't resolve the
+    connecting process's uid (surfaced as unresolved, never guessed at as any specific session)."""
+
+    id: str = Field(default_factory=lambda: _uuid("egress"), primary_key=True)
+    uid: Optional[int]
+    host: str
+    port: int
+    timestamp: datetime = Field(default_factory=utcnow)
+
+
 class AuditRecord(SQLModel, table=True):
     """Every /authorize decision, in full — never a bare boolean. This table is the append-only
     ground truth /audit/reconcile checks obligation-discharge claims against (Phase 7)."""

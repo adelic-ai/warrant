@@ -8,13 +8,17 @@ intersection of what the delegation actually grants, not copied wholesale from t
 
 Simplification, disclosed: `issue_subject_token` stands in for a real IdP (Entra/Okta) issuing an
 OIDC ID token to the human. A production deployment would validate a real IdP-issued token here
-instead of minting its own. The signing key is an ephemeral in-process EC key, same as
-`warrant.identity`'s CA — regenerated every process start, not persisted. Fine for a prototype; a real
-deployment would use a proper key-management story (KMS-backed, rotated).
+instead of minting its own. The signing key is, by default, an ephemeral in-process EC key
+(regenerated every process start, not persisted) — fine for a single instance, but breaks token
+verification the moment a second replica exists, since each replica would sign with its own key.
+Set WARRANT_SIGNING_KEY_PATH to a shared file to fix that (see warrant.keystore); a real deployment
+would use a proper key-management story (KMS-backed, rotated) behind the same load-or-create
+contract instead of a plain file.
 """
 from __future__ import annotations
 
 import datetime
+import os
 import uuid
 
 import jwt
@@ -22,10 +26,14 @@ from cryptography.hazmat.primitives.asymmetric import ec
 from sqlmodel import Session
 
 from warrant.identity import CA
+from warrant.keystore import load_or_create_ec_key
 from warrant.pdp import find_active_delegation
 
 ALG = "ES256"
-_SIGNING_KEY = ec.generate_private_key(ec.SECP256R1())
+_SIGNING_KEY_PATH = os.environ.get("WARRANT_SIGNING_KEY_PATH")
+_SIGNING_KEY = (
+    load_or_create_ec_key(_SIGNING_KEY_PATH) if _SIGNING_KEY_PATH else ec.generate_private_key(ec.SECP256R1())
+)
 
 SUBJECT_TOKEN_TTL_MINUTES = 60
 EXCHANGED_TOKEN_TTL_MINUTES = 5
